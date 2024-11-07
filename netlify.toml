@@ -1,0 +1,15 @@
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+[functions]
+  external_node_modules = ["@aws-sdk"]
+
+# إعدادات التطوير المحلي
+[dev]
+  command = "npm run dev"
+  port = 3000
+  targetPort = 3000 

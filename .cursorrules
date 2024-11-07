@@ -1,0 +1,174 @@
+# Ghost Studio - Course Management Platform
+
+## Project Overview
+A comprehensive course management platform with subscription and individual course purchase options, featuring a dark theme and modern UI.
+
+### Core Features
+1. Course Management
+   - Free courses
+   - Paid courses (Flouci payment in TND)
+   - Subscription-based courses (Stripe payment in USD)
+   - Course content organization (chapters, lessons)
+   - Video and file content support from AWS S3
+   - CloudFront video delivery
+
+2. User Management
+   - User authentication with email verification
+   - Role-based access (admin/user)
+   - User profile management
+   - Purchase history tracking
+
+3. Payment Integration
+   - Stripe for USD subscriptions
+   - Flouci for TND individual course purchases
+   - Payment verification system
+   - Purchase history
+   - Multi-currency support
+
+4. AWS Integration
+   - S3 for video storage
+   - CloudFront for content delivery
+   - Secure video streaming
+   - File management system
+
+## Technology Stack
+- Next.js 14 (App Router)
+- Firebase (Authentication & Realtime Database)
+- Stripe API (Subscription payments)
+- Flouci API (Individual course payments)
+- AWS S3 & CloudFront
+- TypeScript
+- Tailwind CSS
+- Shadcn UI
+- Lucide Icons
+
+## Security Features
+1. Firebase Rules
+   - Role-based access control
+   - Content access validation
+   - Payment verification
+   - User data protection
+
+2. AWS Security
+   - Secure video delivery
+   - CloudFront signed URLs
+   - S3 bucket policies
+   - Access key management
+
+## Unique Features
+1. Dual Payment System
+   - USD payments via Stripe
+   - TND payments via Flouci
+   - Automatic currency handling
+
+2. Video Management
+   - Secure video streaming
+   - CloudFront CDN delivery
+   - Multiple format support
+   - Adaptive bitrate streaming
+
+3. User Experience
+   - Dark theme design
+   - Responsive layout
+   - Modern UI components
+   - Ghost Studio branding
+
+## Future Enhancements
+1. Content Enhancement
+   - Add course progress tracking
+   - Implement course completion certificates
+   - Add interactive quizzes and assessments
+   - Support for course discussions/comments
+   - Course ratings and reviews system
+   - Course recommendations based on user interests
+
+2. User Experience
+   - Add dark/light mode toggle animations
+   - Implement course preview feature
+   - Add course bookmarking
+   - Add course sharing functionality
+   - Implement course search filters
+   - Add course categories navigation
+   - Add loading skeletons for better UX
+
+3. Social Features
+   - Add instructor profiles
+   - Implement student-instructor messaging
+   - Add course discussion forums
+   - Create student study groups
+   - Add social media sharing
+
+4. Learning Features
+   - Add note-taking functionality
+   - Implement course roadmaps
+   - Add learning path recommendations
+   - Create achievement badges
+   - Add progress milestones
+   - Implement spaced repetition learning
+
+5. Technical Improvements
+   - Implement video streaming optimization
+   - Add offline course access
+   - Implement file compression for uploads
+   - Add real-time collaboration features
+   - Implement WebSocket for real-time updates
+   - Add analytics dashboard
+   - Implement caching strategies
+
+6. Mobile Experience
+   - Create mobile app version
+   - Add offline video download
+   - Implement push notifications
+   - Add mobile-specific UI/UX
+   - Create mobile-first video player
+
+7. Administrative Features
+   - Add comprehensive admin dashboard
+   - Implement user management tools
+   - Add course analytics
+   - Create revenue reports
+   - Add content moderation tools
+   - Implement bulk operations
+
+8. Monetization Features
+   - Add referral program
+   - Implement affiliate system
+   - Add course bundles
+   - Create promotional codes
+   - Implement gift cards
+   - Add subscription tiers
+
+9. Integration Ideas
+   - Add Google Calendar integration
+   - Implement Zoom/Meet integration
+   - Add LinkedIn Learning integration
+   - Implement GitHub student verification
+   - Add portfolio generation
+
+10. Security Enhancements
+    - Implement 2FA
+    - Add session management
+    - Implement IP blocking
+    - Add content encryption
+    - Create backup system
+    - Add audit logs
+
+## Future Considerations
+1. Internationalization support
+2. AI-powered course recommendations
+3. Virtual reality course content
+4. Mobile app development
+5. API marketplace for third-party integrations
+6. Blockchain certificates
+7. Machine learning for personalized learning paths
+8. Live streaming capabilities
+9. Automated course generation
+10. Integration with learning management systems
+
+## Code Organization
+- Maintain consistent file structure
+- Follow TypeScript best practices
+- Implement proper error handling
+- Add comprehensive documentation
+- Follow accessibility guidelines
+- Maintain test coverage
