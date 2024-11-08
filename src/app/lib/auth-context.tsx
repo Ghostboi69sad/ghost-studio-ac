@@ -147,8 +147,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   );
 };
 
-// للنسخ الاحتياطي
-backupDatabase();
-
-// للاستعادة
-restoreDatabase();
+// تعديل الأسطر من 150 إلى 154
+if (process.env.NODE_ENV === 'development') {
+  // تنفيذ النسخ الاحتياطي فقط في بيئة التطوير
+  backupDatabase();
+  restoreDatabase();
+}
