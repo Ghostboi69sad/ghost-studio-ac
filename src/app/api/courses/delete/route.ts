@@ -12,10 +12,7 @@ export async function DELETE(request: Request) {
     const userData = userSnapshot.val();
 
     if (!userData || userData.role !== 'admin') {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
     // Delete the course
@@ -25,9 +22,6 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error deleting course:', error);
-    return NextResponse.json(
-      { error: 'Failed to delete course' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to delete course' }, { status: 500 });
   }
-} 
+}

@@ -15,25 +15,28 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
-const stripe = new Stripe(process.env.NEXT_PUBLIC_STRIPE_SECRET_KEY!, {
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2023-08-16'
 });
 
 interface SubscriptionData {
   status: string;
+  currentPeriodEnd: string;
   stripeSubscriptionId?: string;
-  currentPeriodEnd?: string;
   planId?: string;
 }
 
 interface SubscriptionResponse {
-  hasActiveSubscription: boolean;
-  canAccessCourse: boolean;
-  subscriptionDetails: {
+  isValid: boolean;
+  courseAccess: boolean;
+  subscriptionStatus?: string;
+  expiryDate?: string;
+  subscriptionDetails?: {
+    planId: string;
     status: string;
-    planId?: string;
-    expirationDate?: string;
-  } | null;
+    currentPeriodEnd: string;
+  };
+  error?: string;
 }
 
 export const handler: Handler = async (event) => {
@@ -47,9 +50,18 @@ export const handler: Handler = async (event) => {
     if (!userId) {
       return { 
         statusCode: 400, 
-        body: JSON.stringify({ error: 'User ID is required' })
+        body: JSON.stringify({ 
+          error: 'User ID is required',
+          isValid: false,
+          courseAccess: false 
+        } as SubscriptionResponse)
       };
     }
+
+    const response: SubscriptionResponse = {
+      isValid: false,
+      courseAccess: true
+    };
 
     // التحقق من حالة الاشتراك في Firebase
     const userRef = ref(db, `users/${userId}/subscription`);
@@ -79,7 +91,14 @@ export const handler: Handler = async (event) => {
             // التحقق من Stripe مباشرة
             try {
               const subscription = await stripe.subscriptions.retrieve(subscriptionData.stripeSubscriptionId);
-              courseAccess = subscription.status === 'active';
+              if (subscription.status === 'active') {
+                courseAccess = true;
+                response.subscriptionDetails = {
+                  planId: subscription.items.data[0].price.id,
+                  status: subscription.status,
+                  currentPeriodEnd: new Date(subscription.current_period_end * 1000).toISOString()
+                };
+              }
             } catch (error) {
               console.error('Error checking Stripe subscription:', error);
             }
@@ -88,47 +107,37 @@ export const handler: Handler = async (event) => {
       }
     }
 
-    // تحضير الاستجابة
-    const response: SubscriptionResponse = {
-      hasActiveSubscription: false,
-      canAccessCourse: courseAccess,
-      subscriptionDetails: null
-    };
-
     if (subscriptionData) {
       const currentPeriodEnd = subscriptionData.currentPeriodEnd 
         ? new Date(subscriptionData.currentPeriodEnd) 
         : null;
 
-      response.hasActiveSubscription = Boolean(
+      response.isValid = Boolean(
         subscriptionData.status === 'active' && 
         currentPeriodEnd && 
         currentPeriodEnd > new Date()
       );
 
-      response.subscriptionDetails = {
-        status: subscriptionData.status,
-        planId: subscriptionData.planId,
-        expirationDate: subscriptionData.currentPeriodEnd,
-      };
+      response.subscriptionStatus = subscriptionData.status;
+      response.expiryDate = subscriptionData.currentPeriodEnd;
     }
+
+    response.courseAccess = courseAccess;
 
     return {
       statusCode: 200,
-      body: JSON.stringify(response),
-      headers: {
-        'Content-Type': 'application/json'
-      }
+      body: JSON.stringify(response)
     };
 
   } catch (error) {
-    console.error('Error checking subscription status:', error);
+    console.error('Subscription check error:', error);
     return {
       statusCode: 500,
-      body: JSON.stringify({ 
-        error: 'Failed to check subscription status',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      })
+      body: JSON.stringify({
+        error: 'Internal server error',
+        isValid: false,
+        courseAccess: false
+      } as SubscriptionResponse)
     };
   }
 };

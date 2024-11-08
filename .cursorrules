@@ -172,3 +172,133 @@ A comprehensive course management platform with subscription and individual cour
 - Add comprehensive documentation
 - Follow accessibility guidelines
 - Maintain test coverage
+
+## Additional Features
+4. Multi-language Support
+   - Arabic interface
+   - English interface
+   - Dynamic language switching
+
+5. Analytics & Reporting
+   - Course engagement metrics
+   - Revenue tracking
+   - User progress analytics
+   - Payment history reports
+
+6. Content Protection
+   - DRM for video content
+   - Download restrictions
+   - Access control by IP
+   - Session management
+
+7. Performance Optimization
+   - CloudFront caching
+   - Image optimization
+   - Lazy loading
+   - Code splitting
+
+## Domestika Component Structure
+
+### State Management
+1. Course State
+   - Basic course info (title, description, etc.)
+   - Access type (free/subscription)
+   - Chapters and content
+
+2. Video Player State
+   - Active video
+   - Playback controls
+   - Progress tracking
+   - Volume controls
+
+3. Subscription State
+   - Subscription status
+   - Loading state
+   - Access verification
+
+### Component Organization
+1. Main Sections
+   - Course Information
+   - Video Player
+   - Chapter Management
+   - Access Control
+   - Theme Toggle
+
+2. File Structure
+   /components/course-creator/
+   ├── components/
+   │   ├── domestika-creator.tsx
+   │   ├── video-player/
+   │   │   ├── controls.tsx
+   │   │   └── progress-bar.tsx
+   │   └── chapter-manager/
+   ├── hooks/
+   │   └── use-subscription.ts
+   └── lib/
+       ├── subscription-handlers/
+       └── course-operations/
+
+### Code Guidelines
+1. State Management
+   - Use separate hooks for complex state
+   - Implement proper type checking
+   - Handle loading states
+
+2. Error Handling
+   - Implement try-catch blocks
+   - Show user-friendly error messages
+   - Log errors for debugging
+
+3. Performance
+   - Implement proper memoization
+   - Use lazy loading for videos
+   - Optimize re-renders
+
+# Project Structure Rules
+
+## Components
+1. File Organization
+   - /components/[feature]/
+   - /hooks/
+   - /lib/
+   - /types/
+
+2. Naming Conventions
+   - Components: PascalCase
+   - Files: kebab-case
+   - Functions: camelCase
+
+3. State Management
+   - Use hooks for complex state
+   - Implement proper loading states
+   - Handle errors gracefully
+
+4. Performance
+   - Implement lazy loading
+   - Use proper memoization
+   - Optimize images and assets
+
+5. Security
+   - Validate user roles
+   - Sanitize inputs
+   - Protect API routes
+
+6. Error Handling
+   - Use try/catch blocks
+   - Display user-friendly errors
+   - Log errors properly
+
+7. Code Style
+   - Follow ESLint rules
+   - Use TypeScript strictly
+   - Document complex logic
+
+8. Testing
+   - Write unit tests
+   - Test error cases
+   - Test user interactions
+
+9. Deployment
+   - Use environment variables
+   - Optimize build process
+   - Monitor performance

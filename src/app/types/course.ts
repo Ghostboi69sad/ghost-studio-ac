@@ -41,4 +41,4 @@ export interface Lesson {
   videoUrl: string;
   duration?: string;
   description?: string;
-} 
+}

@@ -1,4 +1,7 @@
-import { Course as CourseType, SubscriptionType as SubType } from '../../../components/course-creator/types/course';
+import {
+  Course as CourseType,
+  SubscriptionType as SubType,
+} from '../../../components/course-creator/types/course';
 
 export type SubscriptionType = SubType;
 export type Course = CourseType;
@@ -12,4 +15,4 @@ export interface CourseUpdate {
 
 export interface CourseListingProps {
   onCourseSelect?: (course: Course) => void;
-} 
+}

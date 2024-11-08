@@ -1,40 +1,61 @@
-const { getDatabase, ref, set, get } = require('firebase/database');
-const { initializeApp } = require('firebase/app');
+const admin = require('firebase-admin');
 
-const firebaseConfig = {
-  apiKey: process.env.FIREBASE_API_KEY,
-  authDomain: process.env.FIREBASE_AUTH_DOMAIN,
-  databaseURL: process.env.FIREBASE_DATABASE_URL,
-  projectId: process.env.FIREBASE_PROJECT_ID,
-  storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.FIREBASE_APP_ID,
-};
+if (!admin.apps.length) {
+  admin.initializeApp({
+    credential: admin.credential.cert({
+      projectId: process.env.FIREBASE_ADMIN_PROJECT_ID,
+      clientEmail: process.env.FIREBASE_ADMIN_CLIENT_EMAIL,
+      privateKey: process.env.FIREBASE_ADMIN_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+    }),
+    databaseURL: process.env.FIREBASE_DATABASE_URL,
+  });
+}
 
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
+exports.handler = async (event, context) => {
+  try {
+    const db = admin.database();
+    
+    if (event.httpMethod === 'GET') {
+      const snapshot = await db.ref('courses').once('value');
+      return {
+        statusCode: 200,
+        body: JSON.stringify(snapshot.val() || {}),
+      };
+    }
 
-exports.handler = async (event) => {
-  if (event.httpMethod === 'GET') {
-    const snapshot = await get(ref(db, 'courses'));
-    const courses = snapshot.val();
+    // التحقق من المصادقة للعمليات الأخرى
+    const token = event.headers.authorization?.split('Bearer ')[1];
+    if (!token) {
+      throw new Error('توكن غير صالح');
+    }
+
+    const decodedToken = await admin.auth().verifyIdToken(token);
+    const userRef = db.ref(`users/${decodedToken.uid}`);
+    const userSnapshot = await userRef.once('value');
+    const isAdmin = userSnapshot.val()?.role === 'admin';
+
+    if (!isAdmin) {
+      throw new Error('صلاحيات غير كافية');
+    }
+
+    if (event.httpMethod === 'POST') {
+      const course = JSON.parse(event.body);
+      await db.ref(`courses/${course.id}`).set(course);
+      return {
+        statusCode: 201,
+        body: JSON.stringify(course),
+      };
+    }
+
     return {
-      statusCode: 200,
-      body: JSON.stringify(courses),
+      statusCode: 405,
+      body: JSON.stringify({ error: 'Method Not Allowed' }),
+    };
+  } catch (error) {
+    console.error('Error:', error);
+    return {
+      statusCode: error.code === 'auth/id-token-expired' ? 401 : 500,
+      body: JSON.stringify({ error: error.message }),
     };
   }
-
-  if (event.httpMethod === 'POST') {
-    const course = JSON.parse(event.body);
-    await set(ref(db, `courses/${course.id}`), course);
-    return {
-      statusCode: 201,
-      body: JSON.stringify(course),
-    };
-  }
-
-  return {
-    statusCode: 405,
-    body: 'Method Not Allowed',
-  };
 };

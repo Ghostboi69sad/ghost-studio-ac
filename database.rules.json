@@ -5,16 +5,9 @@
       "$courseId": {
         ".read": true,
         ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || data.child('createdBy').val() === auth.uid)",
-        ".delete": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || data.child('createdBy').val() === auth.uid)",
-        ".validate": "newData.hasChildren(['title', 'description', 'accessType', 'createdBy'])",
-        "purchases": {
-          "$userId": {
-            ".read": "$userId === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin'",
-            ".write": "auth != null && $userId === auth.uid"
-          }
-        },
+        ".validate": "newData.hasChildren(['title', 'description', 'accessType', 'createdBy', 'updatedAt'])",
         "content": {
-          ".read": "data.parent().child('accessType').val() === 'free' || auth != null",
+          ".read": "data.parent().child('accessType').val() === 'free' || auth != null && (root.child('purchases').child(auth.uid).child(data.parent().key).exists() || root.child('users').child(auth.uid).child('subscription').child('status').val() === 'active')",
           ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || data.parent().child('createdBy').val() === auth.uid)"
         }
       }
@@ -26,39 +19,24 @@
         "subscription": {
           ".read": "$uid === auth.uid",
           ".write": "auth != null && ($uid === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin')",
-          ".validate": "newData.hasChildren(['status', 'planId'])"
-        },
-        "purchases": {
-          ".read": "$uid === auth.uid",
-          ".write": "auth != null && $uid === auth.uid",
-          "$courseId": {
-            ".validate": "newData.hasChildren(['purchasedAt', 'amount', 'paymentMethod'])"
-          }
-        },
-        "role": {
-          ".validate": "newData.val() === 'user' || newData.val() === 'admin'"
+          ".validate": "newData.hasChildren(['status', 'currentPeriodEnd', 'stripeSubscriptionId'])"
+        }
+      }
+    },
+    "purchases": {
+      "$userId": {
+        "$courseId": {
+          ".read": "$userId === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin'",
+          ".write": "auth != null && ($userId === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin')",
+          ".validate": "newData.hasChildren(['purchasedAt', 'amount', 'paymentMethod', 'status'])"
         }
       }
     },
     "transactions": {
       "$transactionId": {
-        ".read": "auth != null && data.child('userId').val() === auth.uid",
-        ".write": "auth != null && (!data.exists() || data.child('userId').val() === auth.uid)",
-        ".validate": "newData.hasChildren(['userId', 'courseId', 'amount', 'status'])"
-      }
-    },
-    "subscriptions": {
-      "$uid": {
-        ".read": "$uid === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin'",
-        ".write": "auth != null && ($uid === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin')",
-        ".validate": "newData.hasChildren(['status', 'planId', 'startDate'])"
-      }
-    },
-    "checkoutSessions": {
-      "$sessionId": {
-        ".read": "auth != null && data.child('userId').val() === auth.uid",
+        ".read": "auth != null && (data.child('userId').val() === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin')",
         ".write": "auth != null",
-        ".validate": "newData.hasChildren(['userId', 'status', 'createdAt'])"
+        ".validate": "newData.hasChildren(['userId', 'courseId', 'amount', 'status', 'paymentMethod', 'createdAt'])"
       }
     }
   }

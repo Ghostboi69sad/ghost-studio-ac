@@ -53,6 +53,7 @@ export interface Course {
   updatedAt: string;
   updatedBy?: string;
   createdBy?: string;
+  priceTND?: number;
 }
 
 export interface CourseUpdate {
@@ -65,13 +66,22 @@ export interface CourseUpdate {
   paymentMethod?: PaymentMethod;
   updatedAt: string;
   updatedBy: string;
+  priceTND?: number;
 }
 
 export interface DomestikaCourseCreatorProps {
   initialCourse: Course;
-  onSave?: (updatedCourse: Course) => Promise<void>;
+  onSave: (course: Course) => Promise<void>;
+  onPurchase?: (courseId: string, paymentMethod: PaymentMethod) => Promise<void>;
 }
 
 export interface CourseListingProps {
   onCourseSelect?: (course: Course) => void;
-} 
+}
+
+export interface UserProgress {
+  courseId: string;
+  completedLessons: string[];
+  lastAccessed: string;
+  progress: number;
+}

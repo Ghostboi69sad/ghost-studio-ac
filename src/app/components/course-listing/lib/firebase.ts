@@ -1,32 +1,19 @@
-import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
-import { getAuth, Auth } from 'firebase/auth';
-import { getDatabase, Database } from 'firebase/database';
-import { getStorage, FirebaseStorage } from 'firebase/storage';
+import { initializeApp, getApps } from 'firebase/app';
+import { getAuth } from 'firebase/auth';
+import { getDatabase } from 'firebase/database';
+import { getStorage } from 'firebase/storage';
+import firebaseConfig from './firebase-config';
 
-const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  databaseURL: process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
-};
+let app;
 
-// تهيئة القيم الافتراضية
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const database = getDatabase(app);
-const storage = getStorage(app);
-
-// تصدير المتغيرات
-export { app, auth, database, storage };
-export const db = database;
-
-// التحقق من البيئة وإعادة التهيئة إذا لزم الأمر
-if (typeof window !== 'undefined') {
-  if (!getApps().length) {
-    initializeApp(firebaseConfig);
-  }
+if (!getApps().length) {
+  app = initializeApp(firebaseConfig);
+} else {
+  app = getApps()[0];
 }
 
+export const auth = getAuth(app);
+export const database = getDatabase(app);
+export const storage = getStorage(app);
+export const db = database;
+export { app };

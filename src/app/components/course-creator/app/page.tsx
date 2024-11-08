@@ -1,5 +1,5 @@
-import { CourseCreatorComponent } from "../components/course-creator"
+import { CourseCreatorComponent } from '../components/course-creator';
 
 export default function Page() {
-  return <CourseCreatorComponent />
+  return <CourseCreatorComponent />;
 }

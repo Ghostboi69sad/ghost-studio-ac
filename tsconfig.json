@@ -20,14 +20,25 @@
     ],
     "paths": {
       "@/*": ["./src/*"]
-    }
+    },
+    "typeRoots": [
+      "./node_modules/@types",
+      "./src/types"
+    ]
   },
   "include": [
     "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
-    "**/*.d.ts",
-    ".next/types/**/*.ts"
+    "src/types/*.d.ts",
+    ".next/types/**/*.ts",
+    "src/app/components/**/*.ts",
+    "src/app/components/**/*.tsx"
   ],
-  "exclude": ["node_modules"]
+  "exclude": [
+    "node_modules",
+    "**/*.config.mjs",
+    "**/postcss.config.mjs",
+    "**/next.config.mjs"
+  ]
 }

@@ -1,25 +1,22 @@
-import { CloudFrontClient } from "@aws-sdk/client-cloudfront";
+import { CloudFrontClient } from '@aws-sdk/client-cloudfront';
 
 const cloudFront = new CloudFrontClient({
-  region: process.env.NEXT_PUBLIC_AWS_REGION,
+  region: process.env.MY_AWS_REGION,
   credentials: {
-    accessKeyId: process.env.NEXT_PUBLIC_AWS_ACCESS_KEY_ID!,
-    secretAccessKey: process.env.NEXT_PUBLIC_AWS_SECRET_ACCESS_KEY!
-  }
+    accessKeyId: process.env.MY_AWS_ACCESS_KEY_ID!,
+    secretAccessKey: process.env.MY_AWS_SECRET_ACCESS_KEY!,
+  },
 });
 
-const CLOUDFRONT_DOMAIN = process.env.NEXT_PUBLIC_CLOUDFRONT_DOMAIN || 'https://d3sjwdcuh9ukar.cloudfront.net';
+const CLOUDFRONT_DOMAIN =
+  process.env.NEXT_PUBLIC_CLOUDFRONT_DOMAIN || 'https://d3sjwdcuh9ukar.cloudfront.net';
 
 export const getMediaUrl = (key: string): string => {
-  // إذا كان URL كاملاً، أعد نفس URL
   if (key.startsWith('http://') || key.startsWith('https://')) {
     return key;
   }
 
-  // إذا كان المفتاح يبدأ بـ '/'، قم بإزالته
   const cleanKey = key.startsWith('/') ? key.slice(1) : key;
-
-  // إنشاء URL CloudFront
   return `${CLOUDFRONT_DOMAIN}/${cleanKey}`;
 };
 
@@ -41,7 +38,7 @@ export const getSignedUrl = async (key: string): Promise<string> => {
     return url;
   } catch (error) {
     console.error('Error getting signed URL:', error);
-    return getMediaUrl(key); // استخدم URL العام كنسخة احتياطية
+    return getMediaUrl(key);
   }
 };
 
@@ -49,4 +46,4 @@ export const getCloudfrontDomain = (): string => {
   return CLOUDFRONT_DOMAIN;
 };
 
-export default cloudFront; 
+export default cloudFront;

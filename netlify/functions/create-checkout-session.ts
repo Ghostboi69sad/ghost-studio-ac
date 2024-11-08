@@ -1,75 +1,80 @@
 import { Handler } from '@netlify/functions';
 import Stripe from 'stripe';
-import { getDatabase, ref, set } from 'firebase/database';
-import { initializeApp } from 'firebase/app';
 
-const firebaseConfig = {
-  apiKey: process.env.VITE_FIREBASE_API_KEY,
-  authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.VITE_FIREBASE_APP_ID,
-  databaseURL: process.env.VITE_FIREBASE_DATABASE_URL
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
-
-const stripe = new Stripe(process.env.NEXT_PUBLIC_STRIPE_SECRET_KEY!, {
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2023-08-16'
 });
-
-const DOMAIN = process.env.NEXT_PUBLIC_BASE_URL;
 
 export const handler: Handler = async (event) => {
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: 'Method Not Allowed' };
   }
 
-  const { priceId, userId, domain, mode } = JSON.parse(event.body || '{}');
+  try {
+    const { priceId, userId, courseId, paymentMethod, amount } = JSON.parse(event.body || '');
 
-  if (!priceId || !userId) {
+    const metadata = {
+      courseId,
+      userId,
+      paymentMethod
+    };
+
+    if (paymentMethod === 'stripe') {
+      const session = await stripe.checkout.sessions.create({
+        mode: 'payment',
+        payment_method_types: ['card'],
+        line_items: [{ price: priceId, quantity: 1 }],
+        success_url: `${process.env.URL}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${process.env.URL}/payment/cancel`,
+        client_reference_id: userId,
+        metadata
+      });
+
+      return {
+        statusCode: 200,
+        body: JSON.stringify({ sessionId: session.id })
+      };
+    } 
+    
+    if (paymentMethod === 'flouci') {
+      const transactionId = `tr_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      const response = await fetch('https://api.sandbox.konnect.network/api/v2/payments/init-payment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': process.env.FLOUCI_API_KEY!
+        },
+        body: JSON.stringify({
+          amount,
+          accept_card: true,
+          session_timeout_secs: 1200,
+          success_link: `${process.env.URL}/payment/success?transaction_id=${transactionId}`,
+          fail_link: `${process.env.URL}/payment/cancel?transaction_id=${transactionId}`,
+          developer_tracking_id: transactionId,
+          metadata
+        })
+      });
+
+      const data = await response.json();
+      return {
+        statusCode: 200,
+        body: JSON.stringify({ 
+          paymentUrl: data.payUrl,
+          transactionId 
+        })
+      };
+    }
+
     return {
       statusCode: 400,
-      body: JSON.stringify({ error: 'Missing required parameters' })
-    };
-  }
-
-  try {
-    const session = await stripe.checkout.sessions.create({
-      mode: mode || 'subscription',
-      payment_method_types: ['card'],
-      line_items: [{
-        price: priceId,
-        quantity: 1,
-      }],
-      success_url: `${domain}/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${domain}/canceled`,
-      client_reference_id: userId,
-    });
-
-    // Store the checkout session in Realtime Database
-    const sessionRef = ref(db, `checkoutSessions/${session.id}`);
-    await set(sessionRef, {
-      userId,
-      status: 'pending',
-      createdAt: Date.now(),
-      mode: mode || 'subscription'
-    });
-
-    return {
-      statusCode: 200,
-      body: JSON.stringify({ sessionId: session.id })
+      body: JSON.stringify({ error: 'Invalid payment method' })
     };
   } catch (error) {
-    console.error('Error creating checkout session:', error);
+    console.error('Error:', error);
     return {
       statusCode: 500,
-      body: JSON.stringify({ 
-        error: 'Failed to create checkout session',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      })
+      body: JSON.stringify({ error: 'Failed to create payment session' })
     };
   }
 };

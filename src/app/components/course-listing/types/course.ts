@@ -50,4 +50,3 @@ export interface Course {
 export interface CourseListingProps {
   onCourseSelect?: (course: Course) => void;
 }
-

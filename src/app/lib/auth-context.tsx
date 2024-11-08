@@ -1,36 +1,54 @@
-'use client'
+'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { auth, database } from './firebase';
-import { 
-  User, 
-  onAuthStateChanged, 
-  signInWithEmailAndPassword, 
-  signOut, 
+import {
+  User,
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  signOut,
   createUserWithEmailAndPassword,
-  sendEmailVerification 
+  sendEmailVerification,
+  getAuth,
+  UserCredential,
 } from 'firebase/auth';
-import { ref, set, onValue } from 'firebase/database';
+import { ref, get, set, onValue, getDatabase } from 'firebase/database';
+import { backupDatabase, restoreDatabase } from '../../scripts/backup';
 
 interface AuthUser extends User {
   role?: 'admin' | 'user';
-  hasPurchased?: boolean;
   hasActiveSubscription?: boolean;
+  hasPurchased?: { [courseId: string]: boolean };
   subscription?: {
     status: 'active' | 'inactive' | 'cancelled';
     planId?: string;
+    expiryDate?: string;
   };
 }
 
 interface AuthContextType {
   user: AuthUser | null;
   loading: boolean;
+  isAdmin: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   signup: (email: string, password: string) => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType>({} as AuthContextType);
+export const AuthContext = createContext<AuthContextType>({
+  user: null,
+  loading: true,
+  isAdmin: false,
+  login: async () => {
+    throw new Error('AuthContext not initialized');
+  },
+  logout: async () => {
+    throw new Error('AuthContext not initialized');
+  },
+  signup: async () => {
+    throw new Error('AuthContext not initialized');
+  },
+});
 
 export const useAuth = () => useContext(AuthContext);
 
@@ -39,18 +57,51 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (authUser) => {
-      if (authUser) {
-        const userRef = ref(database, `users/${authUser.uid}`);
-        onValue(userRef, (snapshot) => {
-          const userData = snapshot.val();
-          setUser({ ...authUser, role: userData?.role || 'user' });
-          setLoading(false);
-        });
+    const auth = getAuth();
+    const database = getDatabase();
+
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        const userRef = ref(database, `users/${firebaseUser.uid}`);
+        const subscriptionRef = ref(database, `subscriptions/${firebaseUser.uid}`);
+        const purchasesRef = ref(database, `purchases/${firebaseUser.uid}`);
+
+        try {
+          const [userSnapshot, subscriptionSnapshot, purchasesSnapshot] = await Promise.all([
+            get(userRef),
+            get(subscriptionRef),
+            get(purchasesRef),
+          ]);
+
+          const userData = userSnapshot.val();
+          const subscriptionData = subscriptionSnapshot.val();
+          const purchasesData = purchasesSnapshot.val();
+
+          const hasPurchased = purchasesData
+            ? Object.keys(purchasesData).reduce(
+                (acc, courseId) => ({
+                  ...acc,
+                  [courseId]: true,
+                }),
+                {}
+              )
+            : {};
+
+          setUser({
+            ...firebaseUser,
+            role: userData?.role || 'user',
+            hasActiveSubscription: subscriptionData?.status === 'active',
+            hasPurchased,
+            subscription: subscriptionData || null,
+          });
+        } catch (error) {
+          console.error('خطأ في جلب بيانات المستخدم:', error);
+          setUser(null);
+        }
       } else {
         setUser(null);
-        setLoading(false);
       }
+      setLoading(false);
     });
 
     return () => unsubscribe();
@@ -70,19 +121,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signup = async (email: string, password: string): Promise<void> => {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     await sendEmailVerification(userCredential.user);
-    
+
     // Create user record in Realtime Database
     const userRef = ref(database, `users/${userCredential.user.uid}`);
     await set(userRef, {
       email: userCredential.user.email,
       role: 'user',
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
     });
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, signup }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        loading,
+        isAdmin: user?.role === 'admin',
+        login,
+        logout,
+        signup,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
 };
+
+// للنسخ الاحتياطي
+backupDatabase();
+
+// للاستعادة
+restoreDatabase();
