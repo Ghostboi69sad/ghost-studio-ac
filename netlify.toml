@@ -7,6 +7,7 @@
   NEXT_TELEMETRY_DISABLED = "1"
   NEXT_SHARP_PATH = "/tmp/node_modules/sharp"
   NODE_ENV = "production"
+  SKIP_PRETTIER = "true"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"

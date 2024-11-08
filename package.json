@@ -9,8 +9,7 @@
     "lint": "next lint",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,md}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,md}\"",
-    "format:fix": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,md}\" --config .prettierrc",
-    "prebuild": "yarn format:fix"
+    "format:fix": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,md}\" --config .prettierrc"
   },
   "dependencies": {
     "@aws-sdk/client-cloudfront": "^3.682.0",
