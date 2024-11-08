@@ -1,5 +1,5 @@
 import { ref, update } from 'firebase/database';
-import { database } from '@/lib/firebase';
+import { database } from '../../../lib/firebase';
 import { Course } from '../types/course';
 import { toast } from 'react-hot-toast';
 
