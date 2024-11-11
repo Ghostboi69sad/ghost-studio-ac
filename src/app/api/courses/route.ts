@@ -50,6 +50,8 @@ async function fetchCourses(userId: string): Promise<Course[]> {
   return courses;
 }
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: Request) {
   const headers = new Headers({
     'Content-Type': 'application/json',
