@@ -7,6 +7,7 @@ export interface ContentItem {
   type: 'video' | 'file';
   name: string;
   url: string;
+   locked?: boolean;
 }
 
 export interface Lesson {
@@ -76,6 +77,7 @@ export interface DomestikaCourseCreatorProps {
 }
 
 export interface CourseListingProps {
+  courses: Course[];
   onCourseSelect?: (course: Course) => void;
 }
 

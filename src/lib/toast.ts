@@ -1,6 +1,6 @@
 'use client';
 
-import { toast, ToastOptions } from 'react-toastify';
+import { toast as reactToast, ToastOptions } from 'react-toastify';
 
 const defaultOptions: ToastOptions = {
   position: 'top-right',
@@ -14,17 +14,19 @@ const defaultOptions: ToastOptions = {
   rtl: true,
 };
 
-export const showToast = {
+export const toast = {
   success: (message: string, options?: ToastOptions) => {
-    toast.success(message, { ...defaultOptions, ...options });
+    reactToast.success(message, { ...defaultOptions, ...options });
   },
   error: (message: string, options?: ToastOptions) => {
-    toast.error(message, { ...defaultOptions, ...options });
+    reactToast.error(message, { ...defaultOptions, ...options });
   },
   info: (message: string, options?: ToastOptions) => {
-    toast.info(message, { ...defaultOptions, ...options });
+    reactToast.info(message, { ...defaultOptions, ...options });
   },
   warning: (message: string, options?: ToastOptions) => {
-    toast.warning(message, { ...defaultOptions, ...options });
+    reactToast.warning(message, { ...defaultOptions, ...options });
   },
 };
+
+export const showToast = toast;

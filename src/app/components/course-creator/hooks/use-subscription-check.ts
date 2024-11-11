@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../../../lib/auth-context';
 import { checkSubscriptionStatus } from '../lib/subscription-handlers/subscription-service';
 
-export function useSubscriptionCheck() {
+export function useSubscriptionCheck(courseId?: string) {
   const [hasSubscription, setHasSubscription] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
@@ -16,7 +16,7 @@ export function useSubscriptionCheck() {
       }
 
       try {
-        const status = await checkSubscriptionStatus(user.uid);
+        const status = await checkSubscriptionStatus(user.uid, courseId, user);
         setHasSubscription(status);
       } catch (error) {
         console.error('خطأ في التحقق من الاشتراك:', error);
@@ -27,7 +27,7 @@ export function useSubscriptionCheck() {
     };
 
     checkAccess();
-  }, [user]);
+  }, [user, courseId]);
 
   return { hasSubscription, isLoading };
 }

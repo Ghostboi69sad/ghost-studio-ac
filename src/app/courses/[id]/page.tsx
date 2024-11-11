@@ -8,10 +8,9 @@ import { useAuth } from '../../lib/auth-context';
 import { Button } from '../../lib/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '../../lib/ui/card';
 import { Course } from '../../components/course-creator/types/course';
-import VideoPlayer from '../../components/course-creator/components/video-player';
+import { VideoPlayer } from '../../components/course-creator/components/video-player/index';
 import { toast } from 'react-toastify';
 import { getMediaUrl } from '../../lib/aws/cloudfront-config';
-import { Progress } from '../../../components/ui/progress';
 import { auth } from '../../lib/firebase';
 
 export default function CoursePage() {
@@ -71,11 +70,39 @@ export default function CoursePage() {
     }
   };
 
-  const getVideoUrl = (url: string) => {
-    if (url.startsWith('http')) {
-      return url;
+  const getVideoUrl = async (url: string): Promise<string> => {
+    try {
+      return await getMediaUrl(url, { 
+        isPublic: false,
+        useBackup: false
+      });
+    } catch (error) {
+      console.error('Error getting video URL:', error);
+      return url; // إرجاع الرابط الأصلي كنسخة احتياطية
     }
-    return getMediaUrl(url); // Convert S3 key to CloudFront URL
+  };
+
+  // تحديث عرض مشغل الفيديو
+  const renderVideoPlayer = () => {
+    if (!currentLesson?.videoUrl) return null;
+
+    return (
+      <div>
+        <VideoPlayer
+          url={currentLesson.videoUrl}
+          thumbnailUrl={course?.thumbnail}
+          onLoadStart={() => setLoading(true)}
+          onLoaded={() => setLoading(false)}
+          onProgress={(progress: number) => {
+            if (currentLesson.id) {
+              updateProgress(currentLesson.id);
+            }
+          }}
+          autoPlay={true}
+        />
+        <h2 className='text-2xl font-bold mt-4'>{currentLesson.title}</h2>
+      </div>
+    );
   };
 
   // تتبع تقدم المستخدم
@@ -145,7 +172,7 @@ export default function CoursePage() {
       if (!user) return false;
 
       if (course.accessType === 'paid') {
-        return user.hasPurchased?.[course.id] === true;
+        return user.hasPurchased && user.hasPurchased(course.id);
       }
 
       if (course.accessType === 'subscription') {
@@ -214,7 +241,6 @@ export default function CoursePage() {
             <span>تقدمك في الدورة</span>
             <span>{Math.round(progress)}%</span>
           </div>
-          <Progress value={progress} className='h-2' />
         </div>
       )}
 
@@ -222,15 +248,7 @@ export default function CoursePage() {
         <div className='md:col-span-2'>
           {canAccessCourse(course) ? (
             currentLesson ? (
-              <div>
-                <VideoPlayer
-                  url={getVideoUrl(currentLesson.videoUrl)}
-                  thumbnailUrl={course.thumbnail}
-                  onLoadStart={() => setLoading(true)}
-                  onLoaded={() => setLoading(false)}
-                />
-                <h2 className='text-2xl font-bold mt-4'>{currentLesson.title}</h2>
-              </div>
+              renderVideoPlayer()
             ) : (
               <div className='bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4'>
                 <p>No lessons available yet.</p>
@@ -240,12 +258,12 @@ export default function CoursePage() {
             <div className='bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4'>
               <p className='font-bold'>Access Restricted</p>
               <p>
-                {course.accessType === 'subscription'
+                {course?.accessType === 'subscription'
                   ? 'You need an active subscription to access this content.'
                   : 'You need to purchase this course to access the content.'}
               </p>
               <Button onClick={handlePurchaseCourse} className='mt-4'>
-                {course.accessType === 'subscription' ? 'View Subscription Plans' : 'Access Course'}
+                {course?.accessType === 'subscription' ? 'View Subscription Plans' : 'Access Course'}
               </Button>
             </div>
           )}

@@ -18,9 +18,9 @@ import {
 } from 'lucide-react';
 import { Button } from './ui/ui/button';
 import { Input } from './ui/ui/input';
-import { Label } from './ui/ui/label';
+import { Label } from './ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/ui/card';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/ui/accordion';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
 import { Slider } from './ui/ui/slider';
 import {
   Dialog,
@@ -39,13 +39,15 @@ import { ThemeProvider, useTheme } from 'next-themes';
 import { Moon, Sun } from 'lucide-react';
 import { getMediaUrl } from '../lib/aws/cloudfront-config';
 import { DomestikaCourseCreatorProps } from '../types/course';
-import { uploadToS3 } from '../lib/s3';
+import { uploadToS3, getPresignedUploadUrl } from '../../../../lib/aws-config';
 import { Loader2 } from 'lucide-react';
 import { showToast } from '../../../../lib/toast';
 
 import { saveCourseToDatabase } from '../lib/course-operations';
 import { handleSubscriptionAccess } from '../lib/subscription-handlers/subscription-service';
 import { useSubscriptionStatus } from '../hooks/use-subscription';
+import EnhancedVideoPlayer from './EnhancedVideoPlayer'
+import { cacheManager } from '../../../lib/cache-manager';
 
 const DomestikaCourseCreator: React.FC<DomestikaCourseCreatorProps> = ({
   initialCourse,
@@ -86,58 +88,49 @@ const DomestikaCourseCreator: React.FC<DomestikaCourseCreatorProps> = ({
   const searchParams = useSearchParams();
 
   // Add at the top with other imports
-  const S3_BUCKET_URL = 'https://your-bucket-name.s3.your-region.amazonaws.com';
+  const S3_BUCKET_URL = 'https://ghost-studio.s3.eu-north-1.amazonaws.com';
 
   // Function to handle S3 file upload
   const handleFileUpload = async (file: File) => {
     try {
-      setIsLoading(true);
+      if (!isAdmin) {
+        toast.error('لا تملك الصلاحيات الكافية لرفع الملفات');
+        return;
+      }
+
+      if (!newContentName) {
+        toast.error('الرجاء إدخال عنوان للمحتوى');
+        return;
+      }
+
       setIsUploading(true);
       setUploadProgress(0);
 
-      // 1. احصل على URL موقع للرفع
-      const response = await fetch('/api/get-upload-url', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          fileName: file.name,
-          fileType: file.type,
-        }),
-      });
+      const fileExtension = file.name.split('.').pop();
+      const fileKey = `videos/${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${fileExtension}`;
 
-      if (!response.ok) {
-        throw new Error('Failed to get upload URL');
-      }
+      const { uploadUrl, url } = await getPresignedUploadUrl(fileKey, file.type);
 
-      const { uploadUrl, url, fileKey } = await response.json();
-
-      // 2. ارفع الملف مباشرة إلى S3
       const uploadResponse = await fetch(uploadUrl, {
         method: 'PUT',
         body: file,
         headers: {
           'Content-Type': file.type,
-        },
+          'x-amz-server-side-encryption': 'AES256'
+        }
       });
 
       if (!uploadResponse.ok) {
-        throw new Error('Failed to upload file');
+        throw new Error('فشل رفع الملف');
       }
 
-      // 3. استخدم URL CloudFront المُرجع
       setNewContentUrl(url);
-      setNewContentName(file.name);
-      setNewContentType(file.type.startsWith('video/') ? 'video' : 'file');
-
-      toast.success('تم رفع الملف بنجاح');
       setUploadProgress(100);
+      toast.success('تم رفع الملف بنجاح');
     } catch (error) {
-      console.error('Upload error:', error);
-      toast.error('فشل رفع الملف');
+      console.error('خطأ في الرفع:', error);
+      toast.error(error instanceof Error ? error.message : 'فشل رفع الملف');
     } finally {
-      setIsLoading(false);
       setIsUploading(false);
     }
   };
@@ -183,52 +176,89 @@ const DomestikaCourseCreator: React.FC<DomestikaCourseCreatorProps> = ({
   };
 
   const handleAddContent = async () => {
-    if (activeChapterIndex === null) return;
-
-    const fullUrl = newContentUrl.startsWith('http')
-      ? newContentUrl
-      : `${process.env.NEXT_PUBLIC_CLOUDFRONT_DOMAIN}/${newContentUrl}`;
+    if (activeChapterIndex === null || !newContentUrl || !newContentName) return;
 
     const newContent: ContentItem = {
       id: `content-${Date.now()}`,
       type: newContentType,
       name: newContentName,
-      url: fullUrl,
+      url: newContentUrl
     };
 
-    setCourse((prev) => {
+    setCourse(prev => {
       const newChapters = [...prev.chapters];
-      newChapters[activeChapterIndex].content.push(newContent);
-      return {
-        ...prev,
-        chapters: newChapters,
-        videoCount: newContentType === 'video' ? prev.videoCount + 1 : prev.videoCount,
-      };
+      if (!newChapters[activeChapterIndex].content) {
+        newChapters[activeChapterIndex].content = [];
+      }
+      if (!newChapters[activeChapterIndex].content.some(item => item.url === newContentUrl)) {
+        newChapters[activeChapterIndex].content.push(newContent);
+        return {
+          ...prev,
+          chapters: newChapters,
+          videoCount: newContentType === 'video' ? prev.videoCount + 1 : prev.videoCount
+        };
+      }
+      return prev;
     });
 
     setNewContentUrl('');
     setNewContentName('');
     setActiveChapterIndex(null);
-
-    await saveCourseChanges();
   };
 
   const removeContent = (chapterIndex: number, contentIndex: number) => {
+    // إيقاف فقاعة الحدث
+    event?.preventDefault();
+    event?.stopPropagation();
+
+    // تأكيد الحذف
+    if (!window.confirm('هل أنت متأكد من حذف هذا المحتوى؟')) {
+      return;
+    }
+
     setCourse((prev) => {
       const newChapters = [...prev.chapters];
-      newChapters[chapterIndex].content.splice(contentIndex, 1);
-      return { ...prev, chapters: newChapters };
+      const chapter = newChapters[chapterIndex];
+      
+      if (!chapter.content) {
+        chapter.content = [];
+        return { ...prev, chapters: newChapters };
+      }
+
+      const removedItem = chapter.content[contentIndex];
+      chapter.content.splice(contentIndex, 1);
+      
+      return {
+        ...prev,
+        chapters: newChapters,
+        videoCount: removedItem?.type === 'video' ? 
+          Math.max((prev.videoCount || 0) - 1, 0) : 
+          (prev.videoCount || 0)
+      };
     });
   };
 
   // Function to handle video URL processing
-  const handleVideoClick = (url: string) => {
-    const cloudFrontUrl = getMediaUrl(url);
-    setActiveVideo(cloudFrontUrl);
-    setIsPlaying(true);
-    if (videoRef.current) {
-      videoRef.current.src = cloudFrontUrl;
-      videoRef.current.play();
+  const handleVideoClick = async (url: string) => {
+    try {
+      const cacheKey = `video_url_${url}`;
+      let videoUrl = cacheManager.get(cacheKey);
+
+      if (!videoUrl) {
+        videoUrl = await getMediaUrl(url, { useSignedUrl: true });
+        cacheManager.set(cacheKey, videoUrl, 3600 * 1000);
+      }
+
+      setActiveVideo(videoUrl);
+      setIsPlaying(true);
+      
+      if (videoRef.current) {
+        videoRef.current.src = videoUrl;
+        await videoRef.current.play();
+      }
+    } catch (error) {
+      console.error('Error loading video:', error);
+      toast.error('فشل في تحميل الفيديو');
     }
   };
 
@@ -286,26 +316,52 @@ const DomestikaCourseCreator: React.FC<DomestikaCourseCreatorProps> = ({
 
   // Check user role on component mount
   useEffect(() => {
-    const checkUserAuth = async () => {
+    const checkAccess = async () => {
       if (!user) {
         router.push('/login');
         return;
       }
 
       try {
-        const token = await user.getIdToken(true);
-        if (!token) {
-          router.push('/login');
+        // في بيئة التطوير، نعتبر المستخدم مشرفاً
+        if (process.env.NODE_ENV === 'development') {
+          setIsAdmin(true);
           return;
         }
+
+        if (user.role === 'admin') {
+          setIsAdmin(true);
+          return;
+        }
+
+        // التحقق من حالة الاشتراك للمستخدمين العاديين
+        const response = await fetch('/api/subscription/check-status', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${await user.getIdToken()}`
+          },
+          body: JSON.stringify({
+            courseId: initialCourse.id,
+            userId: user.uid
+          })
+        });
+
+        const data = await response.json();
+        
+        if (!data.courseAccess && !data.isValid) {
+          toast.error('يجب أن يكون لديك اتراك نشط للوصول إلى هذا المحتوى');
+          router.push('/pricing');
+        }
       } catch (error) {
-        console.error('خطأ في التحقق من المستخدم:', error);
+        console.error('خطأ في التحقق من الوصول:', error);
+        toast.error('حدث خطأ ي التحقق م صلحيات الوصول');
         router.push('/login');
       }
     };
 
-    checkUserAuth();
-  }, [user, router]);
+    checkAccess();
+  }, [user, router, initialCourse.id]);
 
   const [isLoading, setIsLoading] = useState(false);
 
@@ -314,14 +370,16 @@ const DomestikaCourseCreator: React.FC<DomestikaCourseCreatorProps> = ({
       const courseUpdate = {
         accessType: accessType,
         isPublic: isPublic,
-        chapters:
-          course.chapters?.map((chapter) => ({
-            id: chapter.id,
-            title: chapter.title,
-            content: chapter.content,
-            order: chapter.order || 0,
-            lessons: chapter.lessons || [],
-          })) || [],
+        chapters: course.chapters?.map((chapter) => ({
+          id: chapter.id,
+          title: chapter.title,
+          content: chapter.content || [],
+          order: chapter.order || 0,
+          lessons: chapter.lessons || [],
+        })) || [],
+        videoCount: course.chapters?.reduce((acc, chapter) => 
+          acc + (chapter.content?.filter(item => item.type === 'video')?.length || 0), 0
+        ) || 0,
         updatedAt: new Date().toISOString(),
         updatedBy: user?.uid || '',
       };
@@ -339,6 +397,51 @@ const DomestikaCourseCreator: React.FC<DomestikaCourseCreatorProps> = ({
     setAccessType(value);
     if (value === 'subscription') {
       handleSubscriptionAccess(course.id, user?.uid || '');
+    }
+  };
+
+  // عرض حالة التحميل
+  if (subscriptionLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-background">
+        <div className="text-center">
+          <Loader2 className="animate-spin h-8 w-8 mx-auto mb-4" />
+          <p className="text-lg">جري التحقق من الصلاحيات...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // التحقق من الوصول
+  if (!isAdmin && !hasSubscription) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="p-8 bg-yellow-100 dark:bg-yellow-900 rounded-lg text-center">
+          <h2 className="text-2xl font-bold mb-4">غير مصرح باوصول</h2>
+          <p className="text-yellow-800 dark:text-yellow-200 mb-4">
+            يجب ن يكون لديك ��شراك نشط للوصول إلى هذا المحتوى
+          </p>
+          <Button onClick={() => router.push('/pricing')} className="mt-2">
+            عرض خطط الاشتر
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // إضافة دالة updateProgress
+  const updateProgress = async (progress: number) => {
+    if (!user || !course) return;
+
+    try {
+      const progressRef = ref(database, `progress/${user.uid}/${course.id}`);
+      await update(progressRef, {
+        progress,
+        lastAccessed: new Date().toISOString(),
+      });
+    } catch (error) {
+      console.error('خطأ في تحديث التقدم:', error);
+      toast.error('فشل في تحديث التقدم');
     }
   };
 
@@ -362,69 +465,36 @@ const DomestikaCourseCreator: React.FC<DomestikaCourseCreatorProps> = ({
         </div>
         <div className='w-full bg-black dark:bg-black'>
           {activeVideo ? (
-            <div className='relative'>
-              <video
-                ref={videoRef}
-                className='w-full'
-                src={activeVideo}
-                onClick={togglePlayPause}
-              />
-              <div className='absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-4'>
-                <div className='flex items-center justify-between mb-2'>
-                  <Slider
-                    value={[currentTime]}
-                    max={duration}
-                    step={1}
-                    onValueChange={([value]) => handleSeek(value)}
-                    className='w-full'
-                  />
-                </div>
-                <div className='flex items-center justify-between'>
-                  <div className='flex items-center space-x-2'>
-                    <Button size='icon' variant='ghost' onClick={togglePlayPause}>
-                      {isPlaying ? <Pause className='h-6 w-6' /> : <Play className='h-6 w-6' />}
-                    </Button>
-                    <Button size='icon' variant='ghost' onClick={skipBackward}>
-                      <SkipBack className='h-6 w-6' />
-                    </Button>
-                    <Button size='icon' variant='ghost' onClick={skipForward}>
-                      <SkipForward className='h-6 w-6' />
-                    </Button>
-                    <span className='text-sm'>
-                      {formatTime(currentTime)} / {formatTime(duration)}
-                    </span>
-                  </div>
-                  <div className='flex items-center space-x-2'>
-                    <Button size='icon' variant='ghost' onClick={toggleMute}>
-                      {isMuted ? <VolumeX className='h-6 w-6' /> : <Volume2 className='h-6 w-6' />}
-                    </Button>
-                    <Slider
-                      value={[volume]}
-                      max={1}
-                      step={0.1}
-                      onValueChange={([value]) => handleVolumeChange(value)}
-                      className='w-24'
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
+            <EnhancedVideoPlayer
+              src={activeVideo}
+              thumbnailUrl={course.thumbnail}
+              onProgress={(progress) => {
+                // تحديث تقدم المستخدم
+                console.log(`Video progress: ${progress}%`);
+              }}
+              autoPlay={true}
+              onLoadStart={() => {
+                setIsLoading(true);
+              }}
+              onLoaded={() => {
+                setIsLoading(false);
+              }}
+            />
           ) : (
-            <div className='w-full h-64 flex items-center justify-center bg-gray-800 dark:bg-gray-800'>
-              <p className='text-gray-400 dark:text-gray-400'>No video selected</p>
+            <div className='w-full h-64 flex items-center justify-center bg-gray-800'>
+              <p className='text-gray-400'>No video selected</p>
             </div>
           )}
         </div>
         <div className='max-w-4xl mx-auto p-8'>
-          <h1 className='text-3xl font-bold mb-8 text-orange-500 dark:text-orange-500'>
-            Course Creator
+          <h1 className='text-3xl font-bold mb-8 text-orange-500'>
+            {isAdmin ? 'Course Creator' : 'Course Content'}
           </h1>
 
           {isAdmin && (
             <div className='mb-6 space-y-4'>
-              {/* Course Title Input */}
               <div>
-                <Label htmlFor='course-title'>Course Title</Label>
+                <Label htmlFor='course-title'>عنوان الدورة</Label>
                 <Input
                   id='course-title'
                   value={course.title}
@@ -433,248 +503,228 @@ const DomestikaCourseCreator: React.FC<DomestikaCourseCreatorProps> = ({
                 />
               </div>
 
-              {/* Access Type Selection */}
               <div>
-                <Label htmlFor='access-type'>Access Type</Label>
+                <Label htmlFor='access-type'>نوع الوصول</Label>
                 <select
                   id='access-type'
                   value={accessType}
                   onChange={(e) => handleAccessTypeUpdate(e.target.value as AccessType)}
                   className='w-full bg-gray-800 text-white p-2 rounded'
-                  aria-label='Select Access Type'
+                  aria-label='اختر نوع الوصول للدورة'
                 >
                   <option value='free'>مجاني</option>
                   <option value='subscription'>يتطلب اشتراك</option>
                 </select>
               </div>
+
+              <Button onClick={addChapter} className='mb-6 bg-orange-500 hover:bg-orange-600'>
+                <Plus className='mr-2 h-4 w-4' /> إضافة فصل
+              </Button>
             </div>
           )}
 
-          {subscriptionLoading ? (
-            <div className='flex items-center justify-center p-4'>
-              <Loader2 className='animate-spin' />
-              <span className='mr-2'>جاري التحقق من الاشتراك...</span>
-            </div>
-          ) : (
-            <>
-              {!isAdmin && accessType === 'subscription' && !hasSubscription && (
-                <div className='p-4 bg-yellow-100 dark:bg-yellow-900 rounded-lg'>
-                  <p className='text-yellow-800 dark:text-yellow-200'>
-                    يجب أن يكون لديك اشتراك نشط للوصول إلى هذا المحتوى
-                  </p>
-                  <Button onClick={() => router.push('/pricing')} className='mt-2'>
-                    عرض خطط الاشتراك
-                  </Button>
-                </div>
-              )}
-
-              {(isAdmin ||
-                accessType === 'free' ||
-                (accessType === 'subscription' && hasSubscription)) && (
-                <>
-                  {isAdmin && (
-                    <Button onClick={addChapter} className='mb-6 bg-orange-500 hover:bg-orange-600'>
-                      <Plus className='mr-2 h-4 w-4' /> Add Chapter
-                    </Button>
-                  )}
-
-                  <Accordion type='single' collapsible className='w-full'>
-                    {Array.isArray(course.chapters) &&
-                      course.chapters.map((chapter, chapterIndex) => (
-                        <AccordionItem
-                          value={`chapter-${chapterIndex}`}
-                          key={chapterIndex}
-                          className='border-gray-700'
-                        >
-                          <AccordionTrigger className='text-gray-300 hover:text-orange-500'>
-                            {chapter.title}
-                          </AccordionTrigger>
-                          <AccordionContent>
-                            <Card className='bg-gray-800 border-gray-700'>
-                              <CardHeader>
-                                <CardTitle>
-                                  {isAdmin ? (
-                                    <Input
-                                      value={chapter.title}
-                                      onChange={(e) => {
-                                        const newChapters = [...course.chapters];
-                                        newChapters[chapterIndex].title = e.target.value;
-                                        setCourse((prev) => ({ ...prev, chapters: newChapters }));
-                                      }}
-                                      placeholder='Chapter title'
-                                      className='bg-gray-700 border-gray-600 text-gray-100'
-                                    />
-                                  ) : (
-                                    <h3>{chapter.title}</h3>
-                                  )}
-                                </CardTitle>
-                              </CardHeader>
-                              <CardContent>
-                                {isAdmin && (
-                                  <div className='flex space-x-2 mb-4'>
-                                    <Dialog>
-                                      <DialogTrigger asChild>
-                                        <Button
-                                          onClick={() => addContent(chapterIndex)}
-                                          className='bg-blue-600 hover:bg-blue-700'
-                                        >
-                                          <Plus className='mr-2 h-4 w-4' /> Add Content
-                                        </Button>
-                                      </DialogTrigger>
-                                      <DialogContent className='sm:max-w-[425px]'>
-                                        <DialogHeader>
-                                          <DialogTitle>إضافة محتوى جديد</DialogTitle>
-                                          <DialogDescription>
-                                            قم باختيار نوع المحتوى وتحميل الملف المطلوب
-                                          </DialogDescription>
-                                        </DialogHeader>
-                                        <div className='grid gap-4 py-4'>
-                                          <div className='grid grid-cols-4 items-center gap-4'>
-                                            <Label htmlFor='content-type' className='text-right'>
-                                              Type
-                                            </Label>
-                                            <select
-                                              id='content-type'
-                                              value={newContentType}
-                                              onChange={(e) =>
-                                                setNewContentType(
-                                                  e.target.value as 'video' | 'file'
-                                                )
-                                              }
-                                              className='col-span-3 bg-gray-700 border-gray-600 text-gray-100 rounded-md'
-                                              aria-label='Content Type'
-                                            >
-                                              <option value='video'>Video</option>
-                                              <option value='file'>File</option>
-                                            </select>
-                                          </div>
-
-                                          <div className='grid grid-cols-4 items-center gap-4'>
-                                            <Label htmlFor='content-name' className='text-right'>
-                                              Name
-                                            </Label>
-                                            <Input
-                                              id='content-name'
-                                              value={newContentName}
-                                              onChange={(e) => setNewContentName(e.target.value)}
-                                              className='col-span-3 bg-gray-700 border-gray-600 text-gray-100'
-                                            />
-                                          </div>
-
-                                          <div className='grid grid-cols-4 items-center gap-4'>
-                                            <Label htmlFor='file-upload' className='text-right'>
-                                              Upload File
-                                            </Label>
-                                            <Input
-                                              id='file-upload'
-                                              type='file'
-                                              accept={
-                                                newContentType === 'video' ? 'video/*' : '*/*'
-                                              }
-                                              onChange={(e) => {
-                                                const file = e.target.files?.[0];
-                                                if (file) {
-                                                  handleFileUpload(file);
-                                                }
-                                              }}
-                                              className='col-span-3 bg-gray-700 border-gray-600 text-gray-100'
-                                            />
-                                          </div>
-
-                                          {isUploading && (
-                                            <div className='col-span-4'>
-                                              <div className='w-full bg-gray-700 rounded-full h-2.5'>
-                                                <div
-                                                  className='bg-blue-600 h-2.5 rounded-full'
-                                                  style={{ width: `${uploadProgress}%` }}
-                                                ></div>
-                                              </div>
-                                              <p className='text-sm text-gray-400 mt-2'>
-                                                Uploading... {uploadProgress}%
-                                              </p>
-                                            </div>
-                                          )}
-
-                                          {newContentUrl && (
-                                            <div className='col-span-4'>
-                                              <p className='text-sm text-gray-400'>File URL:</p>
-                                              <code className='block bg-gray-900 p-2 rounded mt-1 text-xs break-all'>
-                                                {newContentUrl}
-                                              </code>
-                                            </div>
-                                          )}
-                                        </div>
-
-                                        <div className='mt-6 flex justify-end'>
-                                          <Button
-                                            onClick={handleAddContent}
-                                            disabled={isUploading || !newContentUrl}
-                                            className='bg-blue-600 hover:bg-blue-700'
-                                          >
-                                            {isUploading ? 'Uploading...' : 'Add Content'}
-                                          </Button>
-                                        </div>
-                                      </DialogContent>
-                                    </Dialog>
-                                  </div>
-                                )}
-
-                                {chapter.content.map((item, contentIndex) => (
-                                  <div
-                                    key={contentIndex}
-                                    className='flex items-center justify-between py-2 border-b border-gray-700'
-                                  >
-                                    <button
-                                      onClick={() =>
-                                        item.type === 'video' && handleVideoClick(item.url)
+          <Accordion type='single' collapsible className='w-full'>
+            {Array.isArray(course.chapters) &&
+              course.chapters.map((chapter, chapterIndex) => (
+                <AccordionItem
+                  value={`chapter-${chapterIndex}`}
+                  key={chapterIndex}
+                  className='border-gray-700'
+                >
+                  <AccordionTrigger className='text-gray-300 hover:text-orange-500'>
+                    {chapter.title}
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <Card className='bg-gray-800 border-gray-700'>
+                      <CardHeader>
+                        <CardTitle>
+                          {isAdmin ? (
+                            <Input
+                              value={chapter.title}
+                              onChange={(e) => {
+                                const newChapters = [...course.chapters];
+                                newChapters[chapterIndex].title = e.target.value;
+                                setCourse((prev) => ({ ...prev, chapters: newChapters }));
+                              }}
+                              placeholder='Chapter title'
+                              className='bg-gray-700 border-gray-600 text-gray-100'
+                            />
+                          ) : (
+                            <h3>{chapter.title}</h3>
+                          )}
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        {isAdmin && (
+                          <div className='flex space-x-2 mb-4'>
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button
+                                  onClick={() => addContent(chapterIndex)}
+                                  className='bg-blue-600 hover:bg-blue-700'
+                                >
+                                  <Plus className='mr-2 h-4 w-4' /> Add Content
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent className='sm:max-w-[425px]'>
+                                <DialogHeader>
+                                  <DialogTitle>إضافة محتوى جديد</DialogTitle>
+                                  <DialogDescription>
+                                    قم باختيار نوع المحتوى وتحميل الملف لمطلوب
+                                  </DialogDescription>
+                                </DialogHeader>
+                                <div className='grid gap-4 py-4'>
+                                  <div className='grid grid-cols-4 items-center gap-4'>
+                                    <Label htmlFor='content-type' className='text-right'>
+                                      Type
+                                    </Label>
+                                    <select
+                                      id='content-type'
+                                      value={newContentType}
+                                      onChange={(e) =>
+                                        setNewContentType(
+                                          e.target.value as 'video' | 'file'
+                                        )
                                       }
-                                      className='flex items-center text-gray-300 hover:text-orange-500'
+                                      className='col-span-3 bg-gray-700 border-gray-600 text-gray-100 rounded-md'
+                                      aria-label='Content Type'
                                     >
-                                      {item.type === 'video' ? (
-                                        <Play className='mr-2 h-4 w-4' />
-                                      ) : (
-                                        <File className='mr-2 h-4 w-4' />
-                                      )}
-                                      <span>{item.name}</span>
-                                    </button>
-                                    {isAdmin && (
-                                      <Button
-                                        variant='destructive'
-                                        size='icon'
-                                        onClick={() => removeContent(chapterIndex, contentIndex)}
-                                        className='bg-red-600 hover:bg-red-700'
-                                      >
-                                        <Trash2 className='h-4 w-4' />
-                                      </Button>
-                                    )}
+                                      <option value='video'>Video</option>
+                                      <option value='file'>File</option>
+                                    </select>
                                   </div>
-                                ))}
-                              </CardContent>
-                            </Card>
-                          </AccordionContent>
-                        </AccordionItem>
-                      ))}
-                  </Accordion>
-                </>
-              )}
-            </>
+
+                                  <div className='grid grid-cols-4 items-center gap-4'>
+                                    <Label htmlFor='content-name' className='text-right'>
+                                      Name
+                                    </Label>
+                                    <Input
+                                      id='content-name'
+                                      value={newContentName}
+                                      onChange={(e) => setNewContentName(e.target.value)}
+                                      className='col-span-3 bg-gray-700 border-gray-600 text-gray-100'
+                                    />
+                                  </div>
+
+                                  <div className='grid grid-cols-4 items-center gap-4'>
+                                    <Label htmlFor='file-upload' className='text-right'>
+                                      Upload File
+                                    </Label>
+                                    <Input
+                                      id='file-upload'
+                                      type='file'
+                                      accept={
+                                        newContentType === 'video' ? 'video/*' : '*/*'
+                                      }
+                                      onChange={(e) => {
+                                        const file = e.target.files?.[0];
+                                        if (file) {
+                                          handleFileUpload(file);
+                                        }
+                                      }}
+                                      className='col-span-3 bg-gray-700 border-gray-600 text-gray-100'
+                                    />
+                                  </div>
+
+                                  {isUploading && (
+                                    <div className='col-span-4'>
+                                      <div className='w-full bg-gray-700 rounded-full h-2.5'>
+                                        <div
+                                          className='bg-blue-600 h-2.5 rounded-full'
+                                          style={{ width: `${uploadProgress}%` }}
+                                        ></div>
+                                      </div>
+                                      <p className='text-sm text-gray-400 mt-2'>
+                                        Uploading... {uploadProgress}%
+                                      </p>
+                                    </div>
+                                  )}
+
+                                  {newContentUrl && (
+                                    <div className='col-span-4'>
+                                      <p className='text-sm text-gray-400'>File URL:</p>
+                                      <code className='block bg-gray-900 p-2 rounded mt-1 text-xs break-all'>
+                                        {newContentUrl}
+                                      </code>
+                                    </div>
+                                  )}
+                                </div>
+
+                                <div className='mt-6 flex justify-end'>
+                                  <Button
+                                    onClick={handleAddContent}
+                                    disabled={isUploading || !newContentUrl}
+                                    className='bg-blue-600 hover:bg-blue-700'
+                                  >
+                                    {isUploading ? 'Uploading...' : 'Add Content'}
+                                  </Button>
+                                </div>
+                              </DialogContent>
+                            </Dialog>
+                          </div>
+                        )}
+
+                        {chapter?.content ? (
+                          chapter.content.map((item, contentIndex) => (
+                            <div
+                              key={`${chapter.id}-content-${contentIndex}`}
+                              className='flex items-center justify-between py-2 border-b border-gray-700'
+                            >
+                              <button
+                                onClick={() => item.type === 'video' && handleVideoClick(item.url)}
+                                className='flex items-center text-gray-300 hover:text-orange-500'
+                              >
+                                {item.type === 'video' ? (
+                                  <Play className='mr-2 h-4 w-4' />
+                                ) : (
+                                  <File className='mr-2 h-4 w-4' />
+                                )}
+                                <span>{item.name}</span>
+                              </button>
+                              {isAdmin && (
+                                <Button
+                                  variant='destructive'
+                                  size='icon'
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    removeContent(chapterIndex, contentIndex);
+                                  }}
+                                  className='bg-red-600 hover:bg-red-700'
+                                >
+                                  <Trash2 className='h-4 w-4' />
+                                </Button>
+                              )}
+                            </div>
+                          ))
+                        ) : (
+                          <p className="text-gray-500">لا يوجد محتوى في هذا الفصل</p>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+          </Accordion>
+
+          {isAdmin && (
+            <div className='fixed bottom-4 right-4 z-50'>
+              <Button
+                onClick={saveCourseChanges}
+                disabled={isLoading}
+                className='bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg shadow-lg'
+              >
+                {isLoading ? (
+                  <div className='flex items-center gap-2'>
+                    <Loader2 className='animate-spin' />
+                    جاري الحفظ...
+                  </div>
+                ) : (
+                  'حفظ التغييرات'
+                )}
+              </Button>
+            </div>
           )}
-        </div>
-        <div className='fixed bottom-4 right-4 z-50'>
-          <Button
-            onClick={saveCourseChanges}
-            disabled={isLoading}
-            className='bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg shadow-lg'
-          >
-            {isLoading ? (
-              <div className='flex items-center gap-2'>
-                <span className='animate-spin'>⏳</span>
-                جاري الحفظ...
-              </div>
-            ) : (
-              'حفظ التغييرات'
-            )}
-          </Button>
         </div>
       </div>
     </ThemeProvider>

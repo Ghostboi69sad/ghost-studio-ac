@@ -302,3 +302,239 @@ A comprehensive course management platform with subscription and individual cour
    - Use environment variables
    - Optimize build process
    - Monitor performance
+
+# Performance Optimizations
+
+## Caching Strategy
+- Use CacheManager for in-memory caching
+- Cache CloudFront URLs for 1 hour
+- Cache video metadata for 24 hours
+- Implement automatic cache cleanup
+
+## Firebase Optimization
+- Store minimal metadata in Firebase
+- Use CloudFront for video delivery
+- Implement lazy loading for content
+- Cache frequently accessed data
+
+## Video Playback
+- Adaptive quality based on network
+- Preload next video metadata
+- Use signed URLs with CloudFront
+- Implement progress tracking
+
+## Code Organization
+- Keep related functionality together
+- Add comprehensive comments
+- Follow TypeScript best practices
+- Implement error handling
+
+## Maintenance Instructions
+1. Cache Management
+   - Review cache TTLs periodically
+   - Monitor cache hit rates
+   - Clear cache on version updates
+
+2. Firebase Usage
+   - Monitor database size
+   - Review security rules
+   - Optimize queries
+
+3. Video Delivery
+   - Monitor CloudFront usage
+   - Update signing keys
+   - Check video encoding
+
+4. Error Handling
+   - Log errors properly
+   - Implement fallbacks
+   - Monitor error rates
+
+# AWS S3 Configuration Files
+
+## Core S3 Files
+- src/app/components/course-creator/lib/aws/s3-config.ts
+  - Main S3 configuration and operations
+  - Contains uploadToS3, getPresignedUploadUrl, getS3Url functions
+  - Uses caching for optimized performance
+
+- src/lib/s3.ts
+  - Root S3 configuration for index.html and static files
+  - Handles initial setup and public files
+  - Contains uploadRootIndexFile and uploadInitialFiles functions
+
+## CloudFront Integration
+- src/app/components/course-creator/lib/aws/cloudfront-config.ts
+  - CloudFront configuration for video delivery
+  - Handles signed URLs and cache invalidation
+  - Supports multiple origins (main, backup, public)
+
+## Cache Management
+- src/app/lib/cache-manager.ts
+  - Centralized cache management
+  - Used by S3 and CloudFront operations
+  - Handles TTL and cache invalidation
+
+## Video Service
+- src/app/lib/video-service.ts
+  - Video-specific operations using S3 and CloudFront
+  - Handles video URL generation and preloading
+  - Integrates with caching system
+
+## API Routes
+- src/app/api/video/route.ts
+  - API endpoint for video URL generation
+  - Uses CloudFront for secure video delivery
+
+## Component Integration
+- src/app/components/course-creator/components/domestika-creator.tsx
+  - Main component using S3 for file uploads
+  - Integrates with video player and course management
+
+## Important Notes
+1. S3 Bucket Structure:
+   - /videos/ - Course video content
+   - /public/ - Publicly accessible files
+   - /backup/ - Backup storage
+   - / (root) - Static files (index.html, css, js)
+
+2. Environment Variables:
+   - AWS_REGION
+   - AWS_S3_BUCKET
+   - AWS_ACCESS_KEY_ID
+   - AWS_SECRET_ACCESS_KEY
+   - CLOUDFRONT_KEY_PAIR_ID
+   - CLOUDFRONT_PRIVATE_KEY
+
+3. Caching Strategy:
+   - Video URLs: 1 hour
+   - Public URLs: 24 hours
+   - Presigned URLs: 1 hour
+   - Upload URLs: 1 hour
+
+4. Security:
+   - Private content uses signed URLs
+   - Public content uses direct S3 URLs
+   - ACL set to 'public-read' for necessary files
+
+5. Maintenance Tasks:
+   - Regular cache cleanup
+   - CloudFront invalidation when needed
+   - Monitor S3 bucket size and usage
+   - Check CloudFront distribution status
+
+## Future Enhancements
+1. Add support for multi-region deployment
+2. Implement automatic backup system
+3. Add video transcoding support
+4. Improve caching strategy
+5. Add analytics and monitoring
+
+## Troubleshooting
+1. Check S3 permissions and policies
+2. Verify CloudFront distribution settings
+3. Monitor cache hit/miss rates
+4. Check environment variables
+5. Review access logs
+
+## S3 Configuration Guide
+
+1. Required Environment Variables:
+   - MY_AWS_ACCESS_KEY_ID: AWS access key
+   - MY_AWS_SECRET_ACCESS_KEY: AWS secret key
+   - NEXT_PUBLIC_AWS_REGION: AWS region (e.g. eu-north-1)
+   - NEXT_PUBLIC_S3_BUCKET: S3 bucket name
+   - NEXT_PUBLIC_CLOUDFRONT_DOMAIN: CloudFront domain (optional)
+
+2. Security Best Practices:
+   - Never expose AWS credentials in client-side code
+   - Use environment variables for sensitive data
+   - Configure CORS properly on S3 bucket
+   - Set appropriate bucket policies
+   - Enable server-side encryption
+
+3. Error Prevention:
+   - Always check for credentials before initializing S3 client
+   - Handle missing environment variables gracefully
+   - Implement proper error boundaries in React components
+   - Add logging for debugging purposes
+
+4. Maintenance Tasks:
+   - Monitor S3 bucket usage and costs
+   - Regularly rotate AWS credentials
+   - Clean up unused files
+   - Update CORS configuration as needed
+   - Check CloudFront cache settings
+
+5. Common Issues:
+   - "AWS credentials are required": Check environment variables
+   - CORS errors: Update bucket CORS policy
+   - Upload failures: Check file permissions
+   - URL expiration: Adjust presigned URL duration
+
+# AWS S3 Setup Instructions
+
+## Initial Setup
+1. Create S3 Bucket
+   - Region: eu-north-1
+   - Enable versioning
+   - Configure CORS
+   - Set up lifecycle rules
+
+2. CloudFront Configuration
+   - Create distribution
+   - Configure SSL/TLS
+   - Set up origin access identity
+   - Configure cache behaviors
+
+3. IAM Configuration
+   - Create service account
+   - Set up bucket policies
+   - Configure access keys
+
+## Project Structure Updates
+
+### Video Player Integration
+1. Components
+   - /components/video-player/
+     ├── index.tsx
+     ├── controls.tsx
+     ├── progress.tsx
+     └── cache.ts
+
+2. Caching Strategy
+   - Use CacheManager for URLs
+   - Cache video metadata
+   - Implement preloading
+   - Handle cleanup
+
+### Storage Optimization
+1. Firebase Usage
+   - Store minimal metadata
+   - Move media to S3
+   - Use references only
+   - Implement lazy loading
+
+2. S3 Organization
+   - /videos/[courseId]/
+   - /thumbnails/
+   - /attachments/
+   - /backups/
+
+## Current Tasks
+
+1. Video Player Implementation
+   - Add player component
+   - Implement controls
+   - Add progress tracking
+   - Handle caching
+
+2. Storage Migration
+   - Move files to S3
+   - Update references
+   - Clean Firebase storage
+   - Verify migrations
+
+3. Caching Implementation
+   - Set up CacheManager
+   - Configure

@@ -1,17 +1,19 @@
 import { NextResponse } from 'next/server';
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { PutObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { v4 as uuidv4 } from 'uuid';
+import { S3Client } from '@aws-sdk/client-s3';
 
 const s3Client = new S3Client({
-  region: 'eu-north-1',
+  region: process.env.NEXT_PUBLIC_AWS_REGION || 'eu-north-1',
   credentials: {
-    accessKeyId: process.env.MY_AWS_ACCESS_KEY_ID!,
-    secretAccessKey: process.env.MY_AWS_SECRET_ACCESS_KEY!,
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || ''
   },
+  forcePathStyle: true
 });
 
-const BUCKET_NAME = process.env.MY_AWS_S3_BUCKET || 'ghost-studio';
+const BUCKET_NAME = process.env.NEXT_PUBLIC_S3_BUCKET || 'ghost-studio';
 const CLOUDFRONT_DOMAIN = process.env.NEXT_PUBLIC_CLOUDFRONT_DOMAIN;
 
 export async function POST(req: Request) {
@@ -32,6 +34,7 @@ export async function POST(req: Request) {
       Bucket: BUCKET_NAME,
       Key: fileKey,
       ContentType: fileType,
+      ServerSideEncryption: 'AES256',
       Metadata: {
         originalName: fileName,
         uploadDate: new Date().toISOString(),
@@ -40,17 +43,15 @@ export async function POST(req: Request) {
 
     try {
       const uploadUrl = await getSignedUrl(s3Client, putObjectCommand, {
-        expiresIn: 3600 * 2,
+        expiresIn: 3600,
+        signableHeaders: new Set(['x-amz-server-side-encryption'])
       });
-
-      const cloudFrontDomain = CLOUDFRONT_DOMAIN?.replace(/\/$/, '');
-      const cloudFrontUrl = `${cloudFrontDomain}/${fileKey}`;
 
       return NextResponse.json({
         success: true,
         uploadUrl,
         fileKey,
-        url: cloudFrontUrl,
+        url: `${CLOUDFRONT_DOMAIN}/${fileKey}`,
         metadata: {
           originalName: fileName,
           contentType: fileType,

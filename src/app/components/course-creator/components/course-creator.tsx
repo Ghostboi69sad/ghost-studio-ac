@@ -12,12 +12,22 @@ import { ref as dbRef, push, set } from 'firebase/database';
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useAuth } from '../../../lib/auth-context';
 import { v4 as uuidv4 } from 'uuid';
-import { uploadToS3 } from '../../../../lib/s3';
+import { uploadToS3 } from '../../../../lib/aws-config';
 import { Course, Lesson, Chapter, SubscriptionType, AccessType } from '../types/course';
 import { showToast } from '../../../../lib/toast';
+import EnhancedVideoPlayer from './EnhancedVideoPlayer'
+import { Card, CardContent, CardHeader, CardTitle } from './ui/ui/card';
+import { Video, File, Trash2, Play, Pause, Volume2, VolumeX } from 'lucide-react';
+interface CourseCreatorComponentProps {
+  initialCourse?: Course;
+  onSave?: (course: Course) => Promise<void>;
+}
 
-export function CourseCreatorComponent() {
-  const [course, setCourse] = useState<Course>({
+export function CourseCreatorComponent({ 
+  initialCourse,
+  onSave 
+}: CourseCreatorComponentProps) {
+  const [course, setCourse] = useState<Course>(initialCourse || {
     id: '',
     name: '',
     title: '',
@@ -34,8 +44,8 @@ export function CourseCreatorComponent() {
     imageUrl: '',
     videoCount: 0,
     category: '',
-    subscriptionType: 'free' as SubscriptionType,
-    accessType: 'free' as AccessType,
+    subscriptionType: 'free',
+    accessType: 'free',
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   });
@@ -45,6 +55,9 @@ export function CourseCreatorComponent() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const { user } = useAuth();
   const router = useRouter();
+
+  const [isVideoLoading, setIsVideoLoading] = useState(false);
+  const [videoProgress, setVideoProgress] = useState(0);
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -75,7 +88,14 @@ export function CourseCreatorComponent() {
       id: uuidv4(),
       title: currentLessonTitle,
       order: course.chapters.length + 1,
-      content: [],
+      content: [
+        {
+          id: uuidv4(),
+          type: 'video',
+          name: currentLessonTitle,
+          url: videoUrl
+        }
+      ],
       lessons: [
         {
           id: uuidv4(),
@@ -88,6 +108,7 @@ export function CourseCreatorComponent() {
     setCourse({
       ...course,
       chapters: [...course.chapters, newChapter],
+      videoCount: course.videoCount + 1
     });
 
     setCurrentLessonTitle('');
@@ -125,6 +146,94 @@ export function CourseCreatorComponent() {
       showToast.error('فشل إنشاء الدورة');
     }
   };
+
+  const videoPreviewSection = currentLessonUrl && (
+    <div className="mt-4">
+      <EnhancedVideoPlayer
+        url={currentLessonUrl}
+        thumbnailUrl={currentLessonUrl}
+        autoPlay={false}
+        onLoadStart={() => setIsVideoLoading(true)}
+        onLoaded={() => setIsVideoLoading(false)}
+      />
+      {videoProgress > 0 && (
+        <div className="mt-2 text-sm text-gray-600">
+          تم تحميل {Math.round(videoProgress)}%
+        </div>
+      )}
+    </div>
+  );
+
+  const videoPlayerSection = (
+    <div className="grid grid-cols-12 gap-4 mt-6">
+      {/* قسم مشغل الفيديو */}
+      <div className="col-span-8">
+        <Card className="h-full">
+          {currentLessonUrl ? (
+            <EnhancedVideoPlayer
+              url={currentLessonUrl}
+              thumbnailUrl={course.thumbnail}
+              onLoadStart={() => setIsVideoLoading(true)}
+              onLoaded={() => setIsVideoLoading(false)}
+              autoPlay={false}
+            />
+          ) : (
+            <div className="flex items-center justify-center h-64">
+              <p className="text-muted-foreground">اختر فيديو للمشاهدة</p>
+            </div>
+          )}
+        </Card>
+      </div>
+
+      {/* قسم محتوى الدورة */}
+      <div className="col-span-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>محتوى الدورة</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {course.chapters.map((chapter, index) => (
+              <div key={chapter.id} className="mb-4">
+                <h3 className="font-semibold mb-2">{chapter.title}</h3>
+                {chapter.content?.map((item, contentIndex) => (
+                  <div
+                    key={item.id}
+                    className="flex items-center justify-between py-2 border-b"
+                  >
+                    <button
+                      onClick={() => item.type === 'video' && setCurrentLessonUrl(item.url)}
+                      className="flex items-center text-sm hover:text-primary"
+                    >
+                      {item.type === 'video' ? (
+                        <Video className="h-4 w-4 mr-2" />
+                      ) : (
+                        <File className="h-4 w-4 mr-2" />
+                      )}
+                      <span>{item.name}</span>
+                    </button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => {
+                        const newChapters = [...course.chapters];
+                        newChapters[index].content = chapter.content?.filter(
+                          (_, i) => i !== contentIndex
+                        );
+                        setCourse({ ...course, chapters: newChapters });
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Remove
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
 
   if (!user || user.role !== 'admin') {
     return <div>Unauthorized access</div>;
@@ -204,10 +313,14 @@ export function CourseCreatorComponent() {
               </div>
               <div>
                 <Label htmlFor='lessonVideo'>Lesson Video</Label>
-                <Input id='lessonVideo' type='file' accept='video/*' onChange={handleFileChange} />
-                {currentLessonUrl && (
-                  <video ref={videoRef} src={currentLessonUrl} controls className='mt-2 w-full' />
-                )}
+                <Input 
+                  id='lessonVideo' 
+                  type='file' 
+                  accept='video/*' 
+                  onChange={handleFileChange}
+                  disabled={isVideoLoading} 
+                />
+                {videoPreviewSection}
               </div>
               <Button onClick={handleAddLesson} className='w-full'>
                 Add Lesson
@@ -257,6 +370,7 @@ export function CourseCreatorComponent() {
           </Button>
         </div>
       </div>
+      {videoPlayerSection}
     </div>
   );
 }

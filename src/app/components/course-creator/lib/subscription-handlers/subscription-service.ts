@@ -1,11 +1,29 @@
 import { SubscriptionPlan } from '../../types/payment';
 import { toast } from 'react-hot-toast';
+import { User } from 'firebase/auth';
 
-export async function checkSubscriptionStatus(userId: string): Promise<boolean> {
+export async function checkSubscriptionStatus(userId: string, courseId?: string, user?: User): Promise<boolean> {
   try {
-    const response = await fetch(`/api/check-subscription?userId=${userId}`);
-    const { hasActiveSubscription } = await response.json();
-    return hasActiveSubscription;
+    if (!user) {
+      throw new Error('User is required for authentication');
+    }
+
+    const token = await user.getIdToken();
+    const response = await fetch('/api/subscription/check-status', {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ courseId })
+    });
+
+    if (!response.ok) {
+      throw new Error('فشل التحقق من حالة الاشتراك');
+    }
+
+    const data = await response.json();
+    return data.isValid && data.courseAccess;
   } catch (error) {
     console.error('خطأ في التحقق من حالة الاشتراك:', error);
     return false;
@@ -14,8 +32,8 @@ export async function checkSubscriptionStatus(userId: string): Promise<boolean> 
 
 export async function handleSubscriptionAccess(courseId: string, userId: string): Promise<boolean> {
   try {
-    const hasSubscription = await checkSubscriptionStatus(userId);
-    if (!hasSubscription) {
+    const hasAccess = await checkSubscriptionStatus(userId, courseId);
+    if (!hasAccess) {
       toast.error('يجب أن يكون لديك اشتراك نشط للوصول إلى هذه الدورة');
       return false;
     }

@@ -1,24 +1,50 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../../lib/auth-context';
+import { toast } from 'react-toastify';
 
-export function useSubscriptionStatus() {
-  const [hasSubscription, setHasSubscription] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+interface SubscriptionDetails {
+  planId: string;
+  status: string;
+  currentPeriodEnd: string;
+  subscriptionType: 'free' | 'paid' | 'subscription';
+  accessType: 'free' | 'paid' | 'subscription';
+}
+
+interface SubscriptionStatus {
+  hasSubscription: boolean;
+  isLoading: boolean;
+  isSubscribed?: boolean;
+  subscriptionDetails?: SubscriptionDetails;
+  expiryDate?: string;
+  error?: string;
+}
+
+export function useSubscriptionStatus(courseId?: string): SubscriptionStatus {
   const { user } = useAuth();
+  const [status, setStatus] = useState<SubscriptionStatus>({
+    hasSubscription: false,
+    isLoading: true
+  });
 
   useEffect(() => {
     const checkSubscription = async () => {
       if (!user) {
-        setHasSubscription(false);
-        setIsLoading(false);
+        setStatus({
+          hasSubscription: false,
+          isLoading: false
+        });
         return;
       }
 
       try {
-        const response = await fetch('/api/check-subscription', {
-          headers: {
-            Authorization: `Bearer ${await user.getIdToken()}`,
+        const token = await user.getIdToken();
+        const response = await fetch('/api/subscription/check-status', {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
           },
+          body: JSON.stringify({ courseId })
         });
 
         if (!response.ok) {
@@ -26,17 +52,26 @@ export function useSubscriptionStatus() {
         }
 
         const data = await response.json();
-        setHasSubscription(data.hasActiveSubscription);
+        setStatus({
+          hasSubscription: data.isValid,
+          isLoading: false,
+          isSubscribed: data.isValid,
+          subscriptionDetails: data.subscriptionDetails,
+          expiryDate: data.expiryDate
+        });
       } catch (error) {
         console.error('خطأ في التحقق من الاشتراك:', error);
-        setHasSubscription(false);
-      } finally {
-        setIsLoading(false);
+        setStatus({
+          hasSubscription: false,
+          isLoading: false,
+          error: error instanceof Error ? error.message : 'حدث خطأ غير معروف'
+        });
+        toast.error('فشل التحقق من حالة الاشتراك');
       }
     };
 
     checkSubscription();
-  }, [user]);
+  }, [user, courseId]);
 
-  return { hasSubscription, isLoading };
+  return status;
 }

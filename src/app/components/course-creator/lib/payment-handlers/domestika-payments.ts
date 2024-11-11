@@ -43,35 +43,6 @@ export async function createStripePrice(
   }
 }
 
-export async function createFlouciPayment(
-  priceTND: number,
-  courseId: string,
-  userId: string
-): Promise<string> {
-  try {
-    const response = await fetch('/api/create-flouci-payment', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        amount: priceTND,
-        courseId,
-        userId,
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to create Flouci payment');
-    }
-
-    const { paymentUrl } = await response.json();
-    return paymentUrl;
-  } catch (error) {
-    console.error('Error creating Flouci payment:', error);
-    toast.error('Failed to create payment in Flouci');
-    throw error;
-  }
-}
-
 export function getInitialPaymentState(course: Course): PaymentSetupState {
   return {
     priceUSD: course.price || 0,

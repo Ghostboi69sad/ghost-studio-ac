@@ -50,17 +50,28 @@ async function fetchCourses(userId: string): Promise<Course[]> {
   return courses;
 }
 
-export async function GET(request: NextRequest) {
+export async function GET(request: Request) {
+  const headers = new Headers({
+    'Content-Type': 'application/json',
+    'Access-Control-Allow-Origin': '*'
+  });
+
   try {
     const userId = request.headers.get('user-id');
     if (!userId) {
-      return NextResponse.json({ error: 'غير مصرح' }, { status: 401 });
+      return new Response(JSON.stringify({ error: 'غير مصرح' }), { 
+        status: 401, 
+        headers 
+      });
     }
 
     const courses = await fetchCourses(userId);
-    return NextResponse.json(courses);
+    return new Response(JSON.stringify(courses), { headers });
   } catch (error) {
     console.error('خطأ في جلب الدورات:', error);
-    return NextResponse.json({ error: 'فشل في جلب البيانات' }, { status: 500 });
+    return new Response(JSON.stringify({ error: 'فشل في جلب البيانات' }), { 
+      status: 500, 
+      headers 
+    });
   }
 }

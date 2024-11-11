@@ -5,6 +5,7 @@ const config = {
   content: [
     "./src/app/**/*.{js,ts,jsx,tsx}",
     "!./src/**/node_modules/**",
+    "./src/components/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
     container: {

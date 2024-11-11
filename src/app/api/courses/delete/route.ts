@@ -1,27 +1,64 @@
 import { NextResponse } from 'next/server';
 import { database } from '../../../../lib/firebase';
 import { ref, remove, get } from 'firebase/database';
+import { isAdminUser } from '../../../lib/auth-helpers';
 
 export async function DELETE(request: Request) {
+  const headers = new Headers({
+    'Content-Type': 'application/json',
+    'Access-Control-Allow-Origin': '*'
+  });
+
   try {
     const { courseId, userId } = await request.json();
 
-    // Check user permissions
-    const userRef = ref(database, `users/${userId}`);
-    const userSnapshot = await get(userRef);
-    const userData = userSnapshot.val();
-
-    if (!userData || userData.role !== 'admin') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    // التحقق من صلاحيات المستخدم
+    if (!userId || !(await isAdminUser(userId))) {
+      return new Response(JSON.stringify({ error: 'غير مصرح لك بحذف الدورات' }), {
+        status: 403,
+        headers
+      });
     }
 
-    // Delete the course
+    // التحقق من وجود الدورة
     const courseRef = ref(database, `courses/${courseId}`);
+    const courseSnapshot = await get(courseRef);
+
+    if (!courseSnapshot.exists()) {
+      return new Response(JSON.stringify({ error: 'الدورة غير موجودة' }), {
+        status: 404,
+        headers
+      });
+    }
+
+    // حذف الدورة
     await remove(courseRef);
 
-    return NextResponse.json({ success: true });
+    return new Response(JSON.stringify({ 
+      success: true,
+      message: 'تم حذف الدورة بنجاح'
+    }), { 
+      headers 
+    });
+
   } catch (error) {
-    console.error('Error deleting course:', error);
-    return NextResponse.json({ error: 'Failed to delete course' }, { status: 500 });
+    console.error('خطأ في حذف الدورة:', error);
+    return new Response(JSON.stringify({ 
+      error: 'حدث خطأ أثناء حذف الدورة' 
+    }), { 
+      status: 500,
+      headers 
+    });
   }
+}
+
+// إضافة معالجة طلب OPTIONS للـ CORS
+export async function OPTIONS() {
+  return new Response(null, {
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'DELETE, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+    }
+  });
 }

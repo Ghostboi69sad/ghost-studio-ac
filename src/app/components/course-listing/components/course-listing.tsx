@@ -32,6 +32,19 @@ interface StripeProduct {
   unitAmount: number;
 }
 
+const calculateVideoCount = (chapters: Chapter[] = []) => {
+  if (!chapters || !Array.isArray(chapters)) return 0;
+  
+  return chapters.reduce((acc, chapter) => {
+    if (!chapter) return acc;
+    
+    const contentCount = chapter.content?.filter(item => item.type === 'video')?.length || 0;
+    const lessonsCount = chapter.lessons?.length || 0;
+    
+    return acc + contentCount + lessonsCount;
+  }, 0);
+};
+
 export function CourseListingComponent() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -177,27 +190,28 @@ export function CourseListingComponent() {
       return;
     }
 
-    if (course.accessType === 'paid') {
-      try {
-        const response = await fetch('/api/create-checkout-session', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            priceId: process.env.NEXT_PUBLIC_BASE_PRICE_ID,
-            quantity: course.price,
-            courseId: course.id,
-            userId: user.uid,
-          }),
-        });
+    try {
+      const response = await fetch('/api/checkout/create-session', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${await user.getIdToken()}`
+        },
+        body: JSON.stringify({
+          priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID,
+          courseId: course.id,
+          userId: user.uid,
+        }),
+      });
 
-        if (!response.ok) throw new Error('Payment failed');
+      if (!response.ok) throw new Error('Payment failed');
 
-        const { sessionId } = await response.json();
-        const stripe = await loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
-        await stripe?.redirectToCheckout({ sessionId });
-      } catch (error) {
-        console.error('Payment error:', error);
-      }
+      const { sessionId } = await response.json();
+      const stripe = await loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
+      await stripe?.redirectToCheckout({ sessionId });
+    } catch (error) {
+      console.error('Payment error:', error);
+      toast.error('فشل في إنشاء جلسة الدفع');
     }
   };
 
@@ -220,6 +234,11 @@ export function CourseListingComponent() {
 
   const handleEditCourse = (courseId: string) => {
     router.push(`/courses/${courseId}/edit`);
+  };
+
+  const handleDeleteDialog = (course: Course, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCourseToDelete(course);
   };
 
   return (
@@ -436,13 +455,7 @@ export function CourseListingComponent() {
                     <span className='text-2xl font-bold text-purple-400'>${course.price}</span>
                     <span className='text-sm text-gray-400 ml-2'>
                       /
-                      {course.videoCount ||
-                        course.chapters?.reduce(
-                          (acc, chapter) => acc + chapter.lessons.length,
-                          0
-                        ) ||
-                        0}{' '}
-                      Videos
+                      {calculateVideoCount(course.chapters)} Videos
                     </span>
                   </div>
                 </CardFooter>
@@ -459,52 +472,48 @@ export function CourseListingComponent() {
                     </Button>
                   </Link>
                 </CardFooter>
-                {user?.role === 'admin' && (
-                  <CardFooter className='flex justify-between items-center'>
-                    <Button
-                      variant='outline'
-                      onClick={() => router.push(`/courses/${course.id}/edit`)}
-                      className='text-purple-400 border-purple-400 hover:bg-purple-400 hover:text-white'
-                    >
-                      <Edit className='w-4 h-4 mr-2 text-purple-400' />
-                      <span className='text-purple-400'>تحرير المحتوى</span>
-                    </Button>
+                <CardFooter className='flex justify-between items-center'>
+                  <Button
+                    variant='outline'
+                    onClick={() => router.push(`/courses/${course.id}/edit`)}
+                    className='text-purple-400 border-purple-400 hover:bg-purple-400 hover:text-white'
+                  >
+                    <Edit className='w-4 h-4 mr-2 text-purple-400' />
+                    <span className='text-purple-400'>View Course</span>
+                  </Button>
+                  {user?.role === 'admin' && (
                     <Dialog>
                       <DialogTrigger asChild>
                         <Button
                           variant='destructive'
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setCourseToDelete(course);
-                          }}
+                          onClick={(e) => handleDeleteDialog(course, e)}
                         >
                           <Trash2 className='w-4 h-4 mr-2' /> Delete Course
                         </Button>
                       </DialogTrigger>
                       <DialogContent>
                         <DialogHeader>
-                          <DialogTitle>Confirm Deletion</DialogTitle>
+                          <DialogTitle>تأكيد الحذف</DialogTitle>
                           <DialogDescription>
-                            Are you sure you want to delete "{courseToDelete?.title}"? This action
-                            cannot be undone.
+                            هل أنت متأكد من حذف "{courseToDelete?.title}"؟ لا يمكن التراجع عن هذا الإجراء.
                           </DialogDescription>
                         </DialogHeader>
                         <DialogFooter>
                           <Button variant='outline' onClick={() => setCourseToDelete(null)}>
-                            Cancel
+                            إلغاء
                           </Button>
                           <Button
                             variant='destructive'
                             onClick={handleDeleteCourse}
                             disabled={!courseToDelete}
                           >
-                            Delete
+                            حذف
                           </Button>
                         </DialogFooter>
                       </DialogContent>
                     </Dialog>
-                  </CardFooter>
-                )}
+                  )}
+                </CardFooter>
                 <Dialog>
                   <DialogTrigger>
                     <Button variant='ghost' className='text-purple-400'>

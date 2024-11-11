@@ -15,15 +15,17 @@ import {
 import { ref, get, set, onValue, getDatabase } from 'firebase/database';
 import { backupDatabase, restoreDatabase } from '../../scripts/backup';
 
-interface AuthUser extends User {
+export interface AuthUser extends User {
   role?: 'admin' | 'user';
   hasActiveSubscription?: boolean;
-  hasPurchased?: { [courseId: string]: boolean };
-  subscription?: {
-    status: 'active' | 'inactive' | 'cancelled';
-    planId?: string;
-    expiryDate?: string;
+  purchases?: {
+    [courseId: string]: {
+      purchaseDate: string;
+      status: 'active' | 'expired';
+    }
   };
+  hasPurchased?: (courseId: string) => boolean;
+  getIdToken: () => Promise<string>;
 }
 
 interface AuthContextType {
@@ -77,23 +79,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const subscriptionData = subscriptionSnapshot.val();
           const purchasesData = purchasesSnapshot.val();
 
-          const hasPurchased = purchasesData
-            ? Object.keys(purchasesData).reduce(
-                (acc, courseId) => ({
-                  ...acc,
-                  [courseId]: true,
-                }),
-                {}
-              )
-            : {};
-
-          setUser({
+          const authUser: AuthUser = {
             ...firebaseUser,
             role: userData?.role || 'user',
             hasActiveSubscription: subscriptionData?.status === 'active',
-            hasPurchased,
-            subscription: subscriptionData || null,
-          });
+            purchases: purchasesData || {},
+            hasPurchased: (courseId: string) => purchasesData?.[courseId]?.status === 'active',
+            getIdToken: () => firebaseUser.getIdToken()
+          };
+
+          setUser(authUser);
         } catch (error) {
           console.error('خطأ في جلب بيانات المستخدم:', error);
           setUser(null);
@@ -146,10 +141,3 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     </AuthContext.Provider>
   );
 };
-
-// تعديل الأسطر من 150 إلى 154
-if (process.env.NODE_ENV === 'development') {
-  // تنفيذ النسخ الاحتياطي فقط في بيئة التطوير
-  backupDatabase();
-  restoreDatabase();
-}
