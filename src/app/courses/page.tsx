@@ -14,6 +14,8 @@ export default function CoursesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || '/api';
+
   useEffect(() => {
     if (!user) {
       router.push('/login');
@@ -22,7 +24,7 @@ export default function CoursesPage() {
 
     const fetchCourses = async () => {
       try {
-        const response = await fetch('/api/courses', {
+        const response = await fetch(`${API_BASE_URL}/courses`, {
           headers: {
             'user-id': user.uid,
             'Content-Type': 'application/json'
