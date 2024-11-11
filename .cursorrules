@@ -538,3 +538,180 @@ A comprehensive course management platform with subscription and individual cour
 3. Caching Implementation
    - Set up CacheManager
    - Configure
+
+## Project Structure
+1. Main Application
+   - Port: 3000
+   - Main entry point
+   - Handles authentication and core features
+
+2. Course Creator Module
+   - Port: 3006
+   - Path: /src/app/components/course-creator
+   - Handles course creation and management
+   - Video upload via AWS S3
+   - CloudFront integration for video delivery
+
+3. Course Listing Module
+   - Port: 3005
+   - Path: /src/app/components/course-listing
+   - Displays available courses
+   - Handles course purchase flow
+
+## Payment Integration
+1. Stripe Integration
+   - USD payments for subscriptions
+   - Webhook handling for subscription updates
+   - Automatic renewal management
+
+2. Flouci Integration
+   - TND payments for individual courses
+   - Transaction verification system
+   - Purchase history tracking
+
+## AWS Configuration
+1. S3 Storage
+   - Video content storage
+   - Region: eu-north-1
+   - Bucket structure:
+     - /videos/[courseId]/
+     - /thumbnails/
+     - /public/
+     - /backup/
+
+2. CloudFront CDN
+   - Secure video delivery
+   - Signed URLs
+   - Cache management
+   - Multiple origins support
+
+## Firebase Structure
+1. Realtime Database
+   - /courses/
+     - Course metadata
+     - Access control
+     - Content structure
+   - /users/
+     - User profiles
+     - Subscription status
+     - Purchase history
+   - /transactions/
+     - Payment records
+     - Verification status
+   - /purchases/
+     - Course access records
+     - Payment details
+
+## Development Guidelines
+1. Code Organization
+   - Use TypeScript strictly
+   - Follow ESLint rules
+   - Implement proper error handling
+   - Add comprehensive comments
+
+2. Component Structure
+   - Separate business logic
+   - Use custom hooks
+   - Implement proper loading states
+   - Handle errors gracefully
+
+3. Security Measures
+   - Validate user roles
+   - Check course access
+   - Verify payments
+   - Protect API routes
+
+## Build Configuration
+1. Next.js Config
+   - Output: standalone
+   - SWC minification
+   - TypeScript/ESLint ignore during build
+   - Custom webpack configuration
+
+2. Environment Variables
+   - Firebase credentials
+   - AWS configuration
+   - Stripe/Flouci keys
+   - API endpoints
+
+3. Module Configuration
+   - Separate package.json files
+   - Independent build processes
+   - Port management
+   - Path aliases
+
+## Deployment Notes
+1. Vercel Deployment
+   - Environment setup
+   - Build command configuration
+   - Domain management
+   - API routes handling
+
+2. AWS Setup
+   - S3 bucket policies
+   - CloudFront distribution
+   - Access key management
+   - CORS configuration
+
+3. Firebase Setup
+   - Security rules
+   - Database indexing
+   - Authentication setup
+   - Backup configuration
+
+## Current Tasks
+1. Video Player Implementation
+   - Secure playback
+   - Progress tracking
+   - Quality selection
+   - Caching strategy
+
+2. Payment Integration
+   - Stripe webhook handling
+   - Flouci transaction verification
+   - Purchase history
+   - Access management
+
+3. Course Management
+   - Content organization
+   - Access control
+   - Progress tracking
+   - Analytics implementation
+
+## Future Enhancements
+1. Content Features
+   - Course certificates
+   - Interactive quizzes
+   - Progress tracking
+   - Discussion forums
+
+2. Technical Improvements
+   - Video optimization
+   - Cache management
+   - Performance monitoring
+   - Analytics dashboard
+
+3. User Experience
+   - Mobile responsiveness
+   - Offline access
+   - Progress syncing
+   - Notifications system
+
+## Maintenance Tasks
+1. Regular Updates
+   - Dependency updates
+   - Security patches
+   - Performance optimization
+   - Bug fixes
+
+2. Monitoring
+   - Error tracking
+   - Performance metrics
+   - User analytics
+   - Payment monitoring
+
+3. Backup System
+   - Database backups
+   - Content backups
+   - Configuration backups
+   - Recovery procedures

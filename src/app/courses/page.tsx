@@ -22,7 +22,7 @@ export default function CoursesPage() {
 
     const fetchCourses = async () => {
       try {
-        const response = await fetch('/.netlify/functions/courses', {
+        const response = await fetch('/api/courses', {
           headers: {
             'user-id': user.uid,
             'Content-Type': 'application/json'
