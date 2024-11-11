@@ -12,9 +12,43 @@ import { VideoPlayer } from '../../components/course-creator/components/video-pl
 import { toast } from 'react-toastify';
 import { getMediaUrl } from '../../lib/aws/cloudfront-config';
 import { auth } from '../../lib/firebase';
+import { v4 as uuidv4 } from 'uuid';
+import CourseCreator2 from '../../components/course-creator/components/course-creation2';
 
 export default function CoursePage() {
-  const [course, setCourse] = useState<Course | null>(null);
+  const [course, setCourse] = useState<Course>({
+    id: '',
+    name: '',
+    title: '',
+    description: '',
+    category: '',
+    price: 0,
+    subscriptionType: 'free',
+    accessType: 'free',
+    imageUrl: '',
+    videoCount: 0,
+    rating: 0,
+    isPublic: false,
+    thumbnail: '',
+    instructor: '',
+    duration: '0',
+    level: 'beginner',
+    enrolledStudents: 0,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    chapters: [{
+      id: uuidv4(),
+      title: 'Chapter 1',
+      order: 1,
+      content: [],
+      lessons: [{
+        id: uuidv4(),
+        title: 'Lesson 1',
+        videoUrl: '',
+        duration: '0'
+      }]
+    }]
+  });
   const [currentLesson, setCurrentLesson] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -30,13 +64,16 @@ export default function CoursePage() {
       (snapshot) => {
         const data = snapshot.val();
         if (data) {
-          const courseData = { id: snapshot.key as string, ...data };
+          const courseData = {
+            id: snapshot.key,
+            ...data,
+            chapters: data.chapters || []
+          };
           setCourse(courseData);
-          if (data.chapters && data.chapters.length > 0) {
-            const firstChapter = Object.values(data.chapters)[0] as any;
-            if (firstChapter.lessons && firstChapter.lessons.length > 0) {
-              setCurrentLesson(Object.values(firstChapter.lessons)[0]);
-            }
+          
+          // تعيين الدرس الأول تلقائياً
+          if (courseData.chapters?.[0]?.lessons?.[0]) {
+            setCurrentLesson(courseData.chapters[0].lessons[0]);
           }
         } else {
           setError('Course not found');
@@ -63,6 +100,9 @@ export default function CoursePage() {
     try {
       if (course.accessType === 'subscription') {
         router.push('/pricing-plan');
+      } else if (course.accessType === 'free') {
+        // السماح بالوصول للدورات المجانية
+        return true;
       }
     } catch (error) {
       console.error('Payment error:', error);
@@ -98,7 +138,7 @@ export default function CoursePage() {
               updateProgress(currentLesson.id);
             }
           }}
-          autoPlay={true}
+          autoPlay={false}
         />
         <h2 className='text-2xl font-bold mt-4'>{currentLesson.title}</h2>
       </div>
@@ -190,7 +230,9 @@ export default function CoursePage() {
     if (!canAccessCourse(course)) {
       if (!user) {
         router.push('/login');
-      } else if (course.accessType === 'subscription' && !user.hasActiveSubscription) {
+      } else if (course.accessType === 'subscription') {
+        router.push('/pricing-plan');
+      } else if (course.accessType === 'paid' && !user.hasPurchased?.(course.id)) {
         router.push('/pricing-plan');
       }
     }
@@ -247,13 +289,14 @@ export default function CoursePage() {
       <div className='grid md:grid-cols-3 gap-8'>
         <div className='md:col-span-2'>
           {canAccessCourse(course) ? (
-            currentLesson ? (
-              renderVideoPlayer()
-            ) : (
-              <div className='bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4'>
-                <p>No lessons available yet.</p>
-              </div>
-            )
+            <CourseCreator2 
+              initialCourse={course}
+              onSave={async (updatedCourse) => {
+                setCourse(updatedCourse);
+                toast.success('تم تحديث الدورة بنجاح');
+              }}
+              readOnly={!isAdmin}
+            />
           ) : (
             <div className='bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4'>
               <p className='font-bold'>Access Restricted</p>
@@ -268,48 +311,6 @@ export default function CoursePage() {
             </div>
           )}
         </div>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Course Content</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {course.chapters && course.chapters.length > 0 ? (
-              <div className='space-y-4'>
-                {course.chapters.map((chapter, chapterIndex) => (
-                  <div key={chapter.id} className='border rounded p-4'>
-                    <h3 className='font-bold mb-2'>{chapter.title}</h3>
-                    {chapter.lessons && chapter.lessons.length > 0 ? (
-                      <ul className='space-y-2'>
-                        {chapter.lessons.map((lesson) => (
-                          <li key={lesson.id}>
-                            <Button
-                              variant={currentLesson?.id === lesson.id ? 'default' : 'outline'}
-                              className='w-full justify-start'
-                              onClick={() => canAccessCourse(course) && setCurrentLesson(lesson)}
-                              disabled={!canAccessCourse(course)}
-                            >
-                              {lesson.title}
-                            </Button>
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <p className='text-gray-500'>No lessons in this chapter</p>
-                    )}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className='text-gray-500'>No chapters available</p>
-            )}
-          </CardContent>
-          <CardFooter>
-            <p className='text-sm text-gray-500'>
-              {course.chapters?.length || 0} chapters • {course.accessType}
-            </p>
-          </CardFooter>
-        </Card>
       </div>
     </div>
   );

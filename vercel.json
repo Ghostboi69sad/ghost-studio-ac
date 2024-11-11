@@ -1,5 +1,7 @@
 {
   "version": 2,
+  "buildCommand": "yarn build",
+  "outputDirectory": ".next",
   "routes": [
     {
       "src": "/api/(.*)",
@@ -16,5 +18,8 @@
   ],
   "env": {
     "NEXT_PUBLIC_APP_URL": "https://$VERCEL_URL"
+  },
+  "github": {
+    "silent": true
   }
 } 

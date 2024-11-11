@@ -14,7 +14,7 @@ export interface Lesson {
   id: string;
   title: string;
   videoUrl: string;
-  duration?: string;
+  duration: string;
   description?: string;
 }
 

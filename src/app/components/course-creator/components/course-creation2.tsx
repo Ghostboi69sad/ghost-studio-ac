@@ -6,26 +6,33 @@ import { Textarea } from "./ui/textarea"
 import { Label } from "./ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select"
 import { database } from '../../../lib/firebase'
-import { ref as dbRef, push, set } from 'firebase/database'
+import { ref as dbRef, push, set, onValue } from 'firebase/database'
 import { useAuth } from '../../../lib/auth-context'
 import { v4 as uuidv4 } from 'uuid'
 import EnhancedVideoPlayer from './EnhancedVideoPlayer'
+import { Course } from '../../course-listing/types/course';
 
 interface Lesson {
   id: string
   title: string
   videoUrl: string
-  duration: number
+  duration: string
   thumbnailUrl?: string
 }
 
-export default function CourseCreator2() {
-  const [courseName, setCourseName] = useState('')
-  const [courseDescription, setCourseDescription] = useState('')
-  const [category, setCategory] = useState('')
-  const [price, setPrice] = useState(0)
-  const [subscriptionType, setSubscriptionType] = useState<'free' | 'paid' | 'subscription'>('free')
-  const [lessons, setLessons] = useState<Lesson[]>([])
+interface CourseCreator2Props {
+  initialCourse: Course;
+  onSave?: (course: Course) => Promise<void>;
+  readOnly?: boolean;
+}
+
+export default function CourseCreator2({ initialCourse, onSave, readOnly }: CourseCreator2Props) {
+  const [courseName, setCourseName] = useState(initialCourse.name || '')
+  const [courseDescription, setCourseDescription] = useState(initialCourse.description || '')
+  const [category, setCategory] = useState(initialCourse.category || '')
+  const [price, setPrice] = useState(initialCourse.price || 0)
+  const [subscriptionType, setSubscriptionType] = useState<'free' | 'paid' | 'subscription'>(initialCourse.subscriptionType || 'free')
+  const [lessons, setLessons] = useState<Lesson[]>(initialCourse.chapters?.[0]?.lessons || [])
   const [currentLessonTitle, setCurrentLessonTitle] = useState('')
   const [currentLessonUrl, setCurrentLessonUrl] = useState('')
   const [currentLessonDuration, setCurrentLessonDuration] = useState(0)
@@ -56,10 +63,11 @@ export default function CourseCreator2() {
       id: uuidv4(),
       title: currentLessonTitle,
       videoUrl: currentLessonUrl,
-      duration: currentLessonDuration
+      duration: currentLessonDuration.toString(),
+      thumbnailUrl: ''
     }
 
-    setLessons([...lessons, newLesson])
+    setLessons(prevLessons => [...prevLessons, newLesson])
     setCurrentLessonTitle('')
     setCurrentLessonUrl('')
     setCurrentLessonDuration(0)
@@ -88,7 +96,7 @@ export default function CourseCreator2() {
   }
 
   const handleVideoMetadataLoaded = (duration: number) => {
-    setCurrentLessonDuration(duration)
+    setCurrentLessonDuration(duration);
   }
 
   if (!user || user.role !== 'admin') {

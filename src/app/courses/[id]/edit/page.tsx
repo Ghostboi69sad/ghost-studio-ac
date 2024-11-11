@@ -61,7 +61,7 @@ export default function EditCoursePage({ params: { id } }: { params: { id: strin
         
         if (!data.courseAccess && !data.isValid) {
           toast.error('يجب أن يكون لديك اشتراك نشط للوصول إلى هذا المحتوى');
-          router.push('/pricing');
+          router.push('/pricing-plan');
           return;
         }
 
@@ -149,7 +149,7 @@ export default function EditCoursePage({ params: { id } }: { params: { id: strin
             يجب أن يكون لديك اشتراك نشط للوصول إلى هذا المحتوى
           </p>
           <button
-            onClick={() => router.push('/pricing')}
+            onClick={() => router.push('/pricing-plan')}
             className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg"
           >
             عرض خطط الاشتراك
