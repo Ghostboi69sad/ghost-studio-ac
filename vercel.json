@@ -1,38 +1,51 @@
- {
+{
   "version": 2,
   "buildCommand": "yarn build",
   "outputDirectory": ".next",
-  "routes": [
+  "rewrites": [
     {
-      "src": "/api/(.*)",
-      "dest": "/api/$1",
-      "headers": {
-        "Access-Control-Allow-Credentials": "true",
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
-        "Access-Control-Allow-Headers": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization"
-      }
+      "source": "/api/:path*",
+      "destination": "/api/:path*"
     },
     {
-      "src": "/course-creator/(.*)",
-      "dest": "/components/course-creator/$1",
-      "headers": {
-        "Cache-Control": "s-maxage=1, stale-while-revalidate"
-      }
+      "source": "/course-creator/:path*",
+      "destination": "/components/course-creator/:path*"
     },
     {
-      "src": "/course-listing/(.*)",
-      "dest": "/components/course-listing/$1",
-      "headers": {
-        "Cache-Control": "s-maxage=1, stale-while-revalidate"
-      }
+      "source": "/course-listing/:path*",
+      "destination": "/components/course-listing/:path*"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/api/:path*",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Credentials",
+          "value": "true"
+        },
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET,POST,PUT,DELETE,OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization"
+        }
+      ]
     },
     {
-      "src": "/(.*\\.(js|css|png|jpg|jpeg|gif|ico|json))",
-      "dest": "/$1",
-      "headers": {
-        "Cache-Control": "public, max-age=31536000, immutable"
-      }
+      "source": "/(.*\\.(js|css|png|jpg|jpeg|gif|ico|json))",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
     }
   ],
   "env": {
