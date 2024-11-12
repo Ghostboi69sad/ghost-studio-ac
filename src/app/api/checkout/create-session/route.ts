@@ -5,6 +5,12 @@ import { initAdmin } from '../../../../lib/firebase-admin';
 import { database } from '../../../lib/firebase';
 import { ref, set , get } from 'firebase/database';
 
+interface PayPalLink {
+  href: string;
+  rel: string;
+  method?: string;
+}
+
 export async function POST(request: Request) {
   try {
     const { courseId, userId, amount, type = 'course' } = await request.json();
@@ -57,7 +63,9 @@ export async function POST(request: Request) {
     });
 
     const response = await paypalClient.execute(orderRequest);
-    const approveLink = response.result.links.find(link => link.rel === 'approve');
+    const approveLink = (response.result.links as PayPalLink[]).find(
+      (link: PayPalLink) => link.rel === 'approve'
+    );
 
     if (!approveLink || !approveLink.href) {
       throw new Error('PayPal approval URL not found');
