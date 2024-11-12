@@ -5,7 +5,7 @@ import { User } from 'firebase/auth';
 export async function checkSubscriptionStatus(userId: string, courseId?: string, user?: User): Promise<boolean> {
   try {
     if (!user) {
-      throw new Error('User is required for authentication');
+      throw new Error('المستخدم مطلوب للمصادقة');
     }
 
     const token = await user.getIdToken();
@@ -15,7 +15,10 @@ export async function checkSubscriptionStatus(userId: string, courseId?: string,
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify({ courseId })
+      body: JSON.stringify({ 
+        courseId,
+        paymentMethod: 'paypal' 
+      })
     });
 
     if (!response.ok) {

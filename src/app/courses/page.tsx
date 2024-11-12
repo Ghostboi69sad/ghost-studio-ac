@@ -4,8 +4,10 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../lib/auth-context';
 import { CourseListingComponent } from '../components/course-listing/components/course-listing';
-import { Loader2 } from 'lucide-react';
+import { PaidCoursesListing } from '../components/course-listing/components/paid-courses-listing';
+import { Loader2, CreditCard } from 'lucide-react';
 import { Course } from '../components/course-creator/types/course';
+import { Button } from '../components/course-listing/components/ui/button'
 
 export default function CoursesPage() {
   const { user } = useAuth();
@@ -13,6 +15,7 @@ export default function CoursesPage() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showPaidCourses, setShowPaidCourses] = useState(false);
 
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || '/api';
 
@@ -70,7 +73,24 @@ export default function CoursesPage() {
 
   return (
     <div className='min-h-screen'>
-      <CourseListingComponent />
+      <div className="flex justify-end gap-4 p-4">
+        <Button
+          onClick={() => router.push('/pricing-plan')}
+          variant="outline"
+        >
+          خطط الاشتراك
+        </Button>
+        <Button
+          onClick={() => setShowPaidCourses(!showPaidCourses)}
+          variant="outline"
+          className="flex items-center gap-2"
+        >
+          <CreditCard className="h-4 w-4" />
+          {showPaidCourses ? 'جميع الدورات' : 'الدورات المدفوعة'}
+        </Button>
+      </div>
+      
+      {showPaidCourses ? <PaidCoursesListing /> : <CourseListingComponent />}
     </div>
   );
 }

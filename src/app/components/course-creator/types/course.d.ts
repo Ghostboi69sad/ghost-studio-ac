@@ -55,6 +55,8 @@ export interface Course {
   updatedBy?: string;
   createdBy?: string;
   priceTND?: number;
+  paymentStatus?: 'pending' | 'completed' | 'failed';
+  paypalOrderId?: string;
 }
 
 export interface CourseUpdate {

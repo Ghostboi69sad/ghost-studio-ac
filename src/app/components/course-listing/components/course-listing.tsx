@@ -198,19 +198,18 @@ export function CourseListingComponent() {
           'Authorization': `Bearer ${await user.getIdToken()}`
         },
         body: JSON.stringify({
-          priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID,
           courseId: course.id,
           userId: user.uid,
+          amount: course.price
         }),
       });
 
-      if (!response.ok) throw new Error('Payment failed');
+      if (!response.ok) throw new Error('فشل الدفع');
 
-      const { sessionId } = await response.json();
-      const stripe = await loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
-      await stripe?.redirectToCheckout({ sessionId });
+      const { orderId } = await response.json();
+      window.location.href = `${process.env.NEXT_PUBLIC_PAYPAL_URL}/${orderId}`;
     } catch (error) {
-      console.error('Payment error:', error);
+      console.error('خطأ في الدفع:', error);
       toast.error('فشل في إنشاء جلسة الدفع');
     }
   };

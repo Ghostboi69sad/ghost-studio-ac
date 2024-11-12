@@ -99,7 +99,7 @@ const DomestikaCourseCreator: React.FC<DomestikaCourseCreatorProps> = ({
       }
 
       if (!newContentName) {
-        toast.error('الرجاء إدخال عنوان للمحتوى');
+        toast.error('الرجاء إدخال عنوان للمتوى');
         return;
       }
 
@@ -393,11 +393,43 @@ const DomestikaCourseCreator: React.FC<DomestikaCourseCreatorProps> = ({
     }
   };
 
-  const handleAccessTypeUpdate = (value: AccessType) => {
-    setAccessType(value);
-    if (value === 'subscription') {
-      handleSubscriptionAccess(course.id, user?.uid || '');
+  const handleCourseUpdate = async (updates: Partial<CourseUpdate>) => {
+    try {
+      const updatedCourse = {
+        ...course,
+        ...updates,
+        updatedAt: new Date().toISOString(),
+        updatedBy: user?.uid || ''
+      };
+      
+      setCourse(updatedCourse);
+      await saveCourseToDatabase(course, updates);
+      toast.success('تم تحديث الدورة بنجاح');
+    } catch (error) {
+      console.error('خطأ في تحديث الدورة:', error);
+      toast.error('فشل في تحديث الدورة');
     }
+  };
+
+  const handleAccessTypeUpdate = async (value: AccessType) => {
+    setAccessType(value);
+    
+    if (value === 'subscription') {
+      const hasAccess = await handleSubscriptionAccess(course.id, user?.uid || '');
+      if (!hasAccess) {
+        toast.error('لا يمكن تعيين الدورة كاشتراك - تحقق من صلاحيات الوصول');
+        return;
+      }
+    }
+    
+    await handleCourseUpdate({ 
+      accessType: value,
+      subscriptionType: value,
+      isPublic: course.isPublic,
+      price: course.price,
+      updatedAt: new Date().toISOString(),
+      updatedBy: user?.uid || ''
+    });
   };
 
   // عرض حالة التحميل
@@ -419,7 +451,7 @@ const DomestikaCourseCreator: React.FC<DomestikaCourseCreatorProps> = ({
         <div className="p-8 bg-yellow-100 dark:bg-yellow-900 rounded-lg text-center">
           <h2 className="text-2xl font-bold mb-4">غير مصرح باوصول</h2>
           <p className="text-yellow-800 dark:text-yellow-200 mb-4">
-            يجب ن يكون لديك ��شراك نشط للوصول إلى هذا المحتوى
+            يجب ن يكون لديك شراك نشط للوصول إلى هذا المحتوى
           </p>
           <Button onClick={() => router.push('/pricing')} className="mt-2">
             عرض خطط الاشتر

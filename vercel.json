@@ -14,6 +14,10 @@
     {
       "source": "/course-listing/:path*",
       "destination": "/components/course-listing/:path*"
+    },
+    {
+      "source": "/api/webhooks/paypal",
+      "destination": "/api/webhooks/paypal"
     }
   ],
   "headers": [
@@ -49,7 +53,9 @@
     }
   ],
   "env": {
-    "NEXT_PUBLIC_APP_URL": "https://ghost-studio-ac-scvl.vercel.app/"
+    "NEXT_PUBLIC_APP_URL": "https://ghost-studio-ac-scvl.vercel.app/",
+    "NEXT_PUBLIC_PAYPAL_CLIENT_ID": "your_client_id",
+    "PAYPAL_SECRET_KEY": "your_secret_key"
   },
   "github": {
     "silent": true,

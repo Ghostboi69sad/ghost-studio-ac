@@ -11,7 +11,7 @@ interface PlanType {
   price: number;
   interval: 'month' | 'year';
   features: string[];
-  stripePriceId: string;
+  paypalPlanId: string;
   description?: string;
   popular?: boolean;
 }
@@ -22,7 +22,7 @@ const plans: PlanType[] = [
     name: 'Monthly Plan',
     price: 19,
     interval: 'month',
-    stripePriceId: process.env.NEXT_PUBLIC_STRIPE_MONTHLY_PRICE_ID!,
+    paypalPlanId: process.env.NEXT_PUBLIC_PAYPAL_MONTHLY_PLAN_ID!,
     description: 'Perfect for getting started',
     features: [
       'Access to all courses',
@@ -36,7 +36,7 @@ const plans: PlanType[] = [
     name: 'Annual Plan',
     price: 190,
     interval: 'year',
-    stripePriceId: process.env.NEXT_PUBLIC_STRIPE_YEARLY_PRICE_ID!,
+    paypalPlanId: process.env.NEXT_PUBLIC_PAYPAL_YEARLY_PLAN_ID!,
     description: 'Best value for committed learners',
     popular: true,
     features: [
@@ -60,9 +60,12 @@ export default function PricingPlan() {
     const checkCurrentSubscription = async () => {
       if (user) {
         try {
-          const response = await fetch('/.netlify/functions/check-subscription-status', {
+          const response = await fetch('/api/subscription/check-status', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${await user.getIdToken()}`
+            },
             body: JSON.stringify({ userId: user.uid }),
           });
           const data = await response.json();
@@ -88,27 +91,31 @@ export default function PricingPlan() {
         return;
       }
 
-      const response = await fetch('/.netlify/functions/create-checkout-session', {
+      const response = await fetch('/api/checkout/create-session', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${await user.getIdToken()}`
         },
         body: JSON.stringify({
-          priceId: plan.stripePriceId,
+          planId: plan.paypalPlanId,
           userId: user.uid,
           mode: 'subscription',
-          domain: window.location.origin,
         }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to create checkout session');
+        throw new Error('Failed to create subscription session');
       }
 
-      const { sessionId } = await response.json();
-
-      // Redirect to Stripe Checkout
-      window.location.href = `https://checkout.stripe.com/c/pay/${sessionId}`;
+      const { orderId, links } = await response.json();
+      const approvalLink = links.find((link: any) => link.rel === 'approve')?.href;
+      
+      if (approvalLink) {
+        window.location.href = approvalLink;
+      } else {
+        throw new Error('PayPal approval link not found');
+      }
     } catch (err) {
       console.error('Subscription error:', err);
       setError(err instanceof Error ? err.message : 'Failed to process subscription');

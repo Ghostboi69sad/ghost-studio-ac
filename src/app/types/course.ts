@@ -42,3 +42,17 @@ export interface Lesson {
   duration: string;
   description?: string;
 }
+
+export type PaymentMethod = 'paypal' | 'flouci';
+
+export interface PlanType {
+  id: string;
+  name: string;
+  priceUSD: number;
+  priceTND: number;
+  interval: 'month' | 'year';
+  paypalPlanId: string;
+  description?: string;
+  features: string[];
+  popular?: boolean;
+}
