@@ -231,8 +231,14 @@ export function CourseListingComponent() {
     }
   };
 
-  const handleEditCourse = (courseId: string) => {
-    router.push(`/courses/${courseId}/edit`);
+  const handleEditCourse = (courseId: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (user?.role === 'admin') {
+      router.push(`/courses/${courseId}/edit`);
+    } else {
+      router.push(`/courses/${courseId}`);
+    }
   };
 
   const handleDeleteDialog = (course: Course, e: React.MouseEvent) => {
@@ -462,14 +468,16 @@ export function CourseListingComponent() {
                   <span className='text-sm bg-gray-700 text-gray-300 px-2 py-1 rounded'>
                     {course.subscriptionType || course.accessType}
                   </span>
-                  <Link href={`/courses/${course.id}`}>
-                    <Button
-                      variant='outline'
-                      className='text-purple-400 border-purple-400 hover:bg-purple-400 hover:text-white'
-                    >
-                      View Course
-                    </Button>
-                  </Link>
+                  <Button
+                    variant='outline'
+                    onClick={(e) => handleEditCourse(course.id, e)}
+                    className='flex items-center'
+                  >
+                    <Edit className='w-4 h-4 mr-2 text-purple-400' />
+                    <span className='text-purple-400'>
+                      {user?.role === 'admin' ? 'Edit Course' : 'View Course'}
+                    </span>
+                  </Button>
                 </CardFooter>
                 <CardFooter className='flex justify-between items-center'>
                   <Button

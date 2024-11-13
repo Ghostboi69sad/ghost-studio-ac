@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '../lib/auth-context';
 import { CourseListingComponent } from '../components/course-listing/components/course-listing';
 import { PaidCoursesListing } from '../components/course-listing/components/paid-courses-listing';
-import { Loader2, CreditCard } from 'lucide-react';
+import { Loader2, CreditCard, Edit } from 'lucide-react';
 import { Course } from '../components/course-creator/types/course';
 import { Button } from '../components/course-listing/components/ui/button'
 
