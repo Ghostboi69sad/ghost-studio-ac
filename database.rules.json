@@ -5,44 +5,70 @@
       ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'",
       "$courseId": {
         ".read": true,
-        ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || data.child('createdBy').val() === auth.uid)",
-        ".validate": "newData.hasChildren(['title', 'description', 'accessType', 'createdBy', 'updatedAt'])",
-        "content": {
-          ".read": "data.parent().child('accessType').val() === 'free' || auth != null && (root.child('purchases').child(auth.uid).child(data.parent().key).exists() || root.child('users').child(auth.uid).child('subscription').child('status').val() === 'active')",
-          ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || data.parent().child('createdBy').val() === auth.uid)"
+        ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'",
+        "progress": {
+          "$uid": {
+            ".read": "$uid === auth.uid",
+            ".write": "$uid === auth.uid"
+          }
         }
       }
     },
     "users": {
+      ".read": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'",
       "$uid": {
-        ".read": "$uid === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin'",
-        ".write": "$uid === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin'",
-        "role": {
-          ".validate": "newData.val() === 'user' || newData.val() === 'admin'"
+        ".read": "$uid === auth.uid",
+        ".write": "$uid === auth.uid || (auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin')",
+        "profile": {
+          ".read": true,
+          ".write": "$uid === auth.uid"
+        },
+        "purchases": {
+          ".read": "$uid === auth.uid",
+          ".write": "$uid === auth.uid || (auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin')"
         },
         "subscription": {
-          ".validate": "newData.hasChildren(['status', 'currentPeriodEnd'])"
+          ".read": "$uid === auth.uid",
+          ".write": "$uid === auth.uid || (auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin')"
         }
       }
     },
     "progress": {
       "$uid": {
-        ".read": "$uid === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin'",
-        ".write": "$uid === auth.uid"
-      }
-    },
-    "purchases": {
-      "$uid": {
-        ".read": "$uid === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin'",
-        ".write": "auth != null && $uid === auth.uid",
+        ".read": "$uid === auth.uid",
+        ".write": "$uid === auth.uid",
         "$courseId": {
-          ".validate": "newData.hasChildren(['purchasedAt', 'amount', 'status'])"
+          ".validate": "root.child('courses').child($courseId).exists()"
         }
       }
     },
-    "backups": {
+    "purchases": {
       ".read": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'",
-      ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'"
+      "$uid": {
+        ".read": "$uid === auth.uid",
+        ".write": "$uid === auth.uid || (auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin')",
+        "$courseId": {
+          ".validate": "root.child('courses').child($courseId).exists()"
+        }
+      }
+    },
+    "subscriptions": {
+      ".read": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'",
+      "$uid": {
+        ".read": "$uid === auth.uid",
+        ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'"
+      }
+    },
+    "payments": {
+      ".read": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'",
+      "$uid": {
+        ".read": "$uid === auth.uid",
+        ".write": false,
+        "history": {
+          ".read": "$uid === auth.uid",
+          ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'"
+        }
+      }
     }
   }
 }

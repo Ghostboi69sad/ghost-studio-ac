@@ -68,12 +68,16 @@ export default function PricingPlan() {
             },
             body: JSON.stringify({ userId: user.uid }),
           });
-          const data = await response.json();
-          if (data.subscriptionDetails?.planId) {
-            setCurrentPlan(data.subscriptionDetails.planId);
+
+          if (!response.ok) {
+            throw new Error('فشل في التحقق من حالة الاشتراك');
           }
-        } catch (err) {
-          console.error('Error checking subscription:', err);
+
+          const data = await response.json();
+          setCurrentPlan(data.subscriptionDetails?.planId || null);
+        } catch (error) {
+          console.error('خطأ في التحقق من الاشتراك:', error);
+          setError('فشل في التحقق من حالة الاشتراك');
         }
       }
     };

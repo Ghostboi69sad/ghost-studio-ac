@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server';
 import { paypalClient } from '../../../../lib/paypal-config';
 import { orders } from '@paypal/checkout-server-sdk';
-import { initAdmin } from '../../../../lib/firebase-admin';
 import { database } from '../../../lib/firebase';
-import { ref, set , get } from 'firebase/database';
+import { ref, set, get } from 'firebase/database';
 
 interface PayPalLink {
   href: string;
@@ -11,17 +10,29 @@ interface PayPalLink {
   method?: string;
 }
 
+interface CreateSessionRequest {
+  courseId: string;
+  userId: string;
+  amount: number;
+  type?: 'course' | 'subscription';
+}
+
 export async function POST(request: Request) {
   try {
-    const { courseId, userId, amount, type = 'course' } = await request.json();
+    const { courseId, userId, amount, type = 'course' } = await request.json() as CreateSessionRequest;
 
-    // التحقق من نوع الدورة
+    // التحقق من وجود الدورة
     const courseRef = ref(database, `courses/${courseId}`);
     const courseSnapshot = await get(courseRef);
     const course = courseSnapshot.val();
 
     if (!course) {
-      throw new Error('Course not found');
+      return NextResponse.json({ error: 'الدورة غير موجودة' }, { status: 404 });
+    }
+
+    // التحقق من صحة المبلغ
+    if (amount <= 0 || isNaN(amount)) {
+      return NextResponse.json({ error: 'مبلغ غير صالح' }, { status: 400 });
     }
 
     const transactionId = `pp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -37,6 +48,8 @@ export async function POST(request: Request) {
       status: 'pending',
       paymentMethod: 'paypal',
       createdAt: new Date().toISOString(),
+      courseName: course.title,
+      courseType: course.accessType
     });
 
     const orderRequest = new orders.OrdersCreateRequest();
@@ -50,11 +63,11 @@ export async function POST(request: Request) {
         },
         custom_id: `${transactionId}:${type}`,
         description: isSubscription ? 
-          `Subscription: ${course.title}` : 
-          `Course Purchase: ${course.title}`
+          `اشتراك في: ${course.title}` : 
+          `شراء دورة: ${course.title}`
       }],
       application_context: {
-        brand_name: 'Ghost Studio',
+        brand_name: 'Ghost Studio Academy',
         landing_page: 'LOGIN',
         user_action: 'PAY_NOW',
         return_url: `${process.env.NEXT_PUBLIC_APP_URL}/payment/success?transactionId=${transactionId}&courseId=${courseId}&type=${type}`,
@@ -67,8 +80,8 @@ export async function POST(request: Request) {
       (link: PayPalLink) => link.rel === 'approve'
     );
 
-    if (!approveLink || !approveLink.href) {
-      throw new Error('PayPal approval URL not found');
+    if (!approveLink?.href) {
+      throw new Error('رابط الموافقة من PayPal غير موجود');
     }
     
     return NextResponse.json({ 
@@ -78,7 +91,10 @@ export async function POST(request: Request) {
     });
 
   } catch (error) {
-    console.error('Error creating PayPal order:', error);
-    return NextResponse.json({ error: 'فشل في إنشاء طلب الدفع' }, { status: 500 });
+    console.error('خطأ في إنشاء طلب PayPal:', error);
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'فشل في إنشاء طلب الدفع' }, 
+      { status: 500 }
+    );
   }
 }

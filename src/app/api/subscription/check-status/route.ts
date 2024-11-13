@@ -81,15 +81,24 @@ export async function POST(request: Request) {
         response.courseAccess = subscriptionStatus === 'active';
         
         if (subscriptionStatus === 'active') {
-          response.subscriptionDetails = {
-            planId: subscriptionData.planId,
-            status: subscriptionStatus,
-            currentPeriodEnd: subscriptionData.currentPeriodEnd,
-            subscriptionType: 'subscription'
-          };
+          const currentPeriodEnd = new Date(subscriptionData.currentPeriodEnd);
+          const now = new Date();
+          
+          if (currentPeriodEnd > now) {
+            response.subscriptionDetails = {
+              planId: subscriptionData.planId,
+              status: subscriptionStatus,
+              currentPeriodEnd: subscriptionData.currentPeriodEnd,
+              subscriptionType: 'subscription'
+            };
+          } else {
+            response.courseAccess = false;
+            response.subscriptionStatus = 'expired';
+          }
         }
       } catch (error) {
         console.error('PayPal subscription check error:', error);
+        response.subscriptionStatus = 'error';
       }
     }
 

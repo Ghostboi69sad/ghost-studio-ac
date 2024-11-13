@@ -13,10 +13,35 @@ const nextConfig = {
       'firebasestorage.googleapis.com',
       'd3sjwdcuh9ukar.cloudfront.net',
       'ghost-studio.s3.eu-north-1.amazonaws.com',
-      process.env.NEXT_PUBLIC_S3_BUCKET ? 
-        `${process.env.NEXT_PUBLIC_S3_BUCKET}.s3.${process.env.NEXT_PUBLIC_AWS_REGION}.amazonaws.com` : 
-        undefined
+      process.env.NEXT_PUBLIC_S3_BUCKET && 
+        `${process.env.NEXT_PUBLIC_S3_BUCKET}.s3.${process.env.NEXT_PUBLIC_AWS_REGION}.amazonaws.com`
     ].filter(Boolean),
+  },
+  async headers() {
+    return [
+      {
+        source: '/api/:path*',
+        headers: [
+          { key: 'Access-Control-Allow-Credentials', value: 'true' },
+          { key: 'Access-Control-Allow-Origin', value: process.env.NEXT_PUBLIC_APP_URL || '*' },
+          { key: 'Access-Control-Allow-Methods', value: 'GET,POST,PUT,DELETE,OPTIONS' },
+          { key: 'Access-Control-Allow-Headers', value: 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization' },
+        ]
+      }
+    ];
+  },
+  // إضافة rewrites للتعامل مع مسارات API
+  async rewrites() {
+    return [
+      {
+        source: '/api/subscription/check-status',
+        destination: '/api/subscription/check-status'
+      },
+      {
+        source: '/api/checkout/create-session',
+        destination: '/api/checkout/create-session'
+      }
+    ];
   },
   webpack: (config) => {
     config.resolve.fallback = {
@@ -30,17 +55,6 @@ const nextConfig = {
     };
     return config;
   },
-  headers: async () => [
-    {
-      source: '/api/:path*',
-      headers: [
-        { key: 'Access-Control-Allow-Credentials', value: 'true' },
-        { key: 'Access-Control-Allow-Origin', value: '*' },
-        { key: 'Access-Control-Allow-Methods', value: 'GET,POST,PUT,DELETE,OPTIONS' },
-        { key: 'Access-Control-Allow-Headers', value: 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization' },
-      ]
-    }
-  ],
   typescript: {
     ignoreBuildErrors: true
   },
