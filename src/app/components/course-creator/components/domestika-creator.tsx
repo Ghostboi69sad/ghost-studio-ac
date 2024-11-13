@@ -479,52 +479,11 @@ const DomestikaCourseCreator: React.FC<DomestikaCourseCreatorProps> = ({
 
   return (
     <ThemeProvider attribute='class' defaultTheme='dark' enableSystem>
-      <div className='min-h-screen bg-background text-foreground'>
-        <div className='fixed top-4 right-4 z-50'>
-          <Button
-            variant='ghost'
-            size='icon'
-            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            className='rounded-full bg-gray-800 dark:bg-gray-700 hover:bg-gray-700 dark:hover:bg-gray-600'
-          >
-            {mounted &&
-              (theme === 'dark' ? (
-                <Sun className='h-5 w-5 text-yellow-500' />
-              ) : (
-                <Moon className='h-5 w-5 text-gray-300' />
-              ))}
-          </Button>
-        </div>
-        <div className='w-full bg-black dark:bg-black'>
-          {activeVideo ? (
-            <EnhancedVideoPlayer
-              src={activeVideo}
-              thumbnailUrl={course.thumbnail}
-              onProgress={(progress) => {
-                // تحديث تقدم المستخدم
-                console.log(`Video progress: ${progress}%`);
-              }}
-              autoPlay={true}
-              onLoadStart={() => {
-                setIsLoading(true);
-              }}
-              onLoaded={() => {
-                setIsLoading(false);
-              }}
-            />
-          ) : (
-            <div className='w-full h-64 flex items-center justify-center bg-gray-800'>
-              <p className='text-gray-400'>No video selected</p>
-            </div>
-          )}
-        </div>
-        <div className='max-w-4xl mx-auto p-8'>
-          <h1 className='text-3xl font-bold mb-8 text-orange-500'>
-            {isAdmin ? 'Course Creator' : 'Course Content'}
-          </h1>
-
+      <div className='flex h-screen bg-background'>
+        {/* القائمة الجانبية للفصول */}
+        <div className='w-1/4 h-full overflow-y-auto border-r border-gray-800 p-4 bg-gray-900'>
           {isAdmin && (
-            <div className='mb-6 space-y-4'>
+            <div className='space-y-4 mb-6'>
               <div>
                 <Label htmlFor='course-title'>عنوان الدورة</Label>
                 <Input
@@ -539,17 +498,18 @@ const DomestikaCourseCreator: React.FC<DomestikaCourseCreatorProps> = ({
                 <Label htmlFor='access-type'>نوع الوصول</Label>
                 <select
                   id='access-type'
+                  name='access-type'
+                  aria-label='اختر نوع الوصول للدورة'
                   value={accessType}
                   onChange={(e) => handleAccessTypeUpdate(e.target.value as AccessType)}
                   className='w-full bg-gray-800 text-white p-2 rounded'
-                  aria-label='اختر نوع الوصول للدورة'
                 >
                   <option value='free'>مجاني</option>
                   <option value='subscription'>يتطلب اشتراك</option>
                 </select>
               </div>
 
-              <Button onClick={addChapter} className='mb-6 bg-orange-500 hover:bg-orange-600'>
+              <Button onClick={addChapter} className='w-full bg-orange-500 hover:bg-orange-600'>
                 <Plus className='mr-2 h-4 w-4' /> إضافة فصل
               </Button>
             </div>
@@ -738,26 +698,48 @@ const DomestikaCourseCreator: React.FC<DomestikaCourseCreatorProps> = ({
                 </AccordionItem>
               ))}
           </Accordion>
+        </div>
 
-          {isAdmin && (
-            <div className='fixed bottom-4 right-4 z-50'>
-              <Button
-                onClick={saveCourseChanges}
-                disabled={isLoading}
-                className='bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg shadow-lg'
-              >
-                {isLoading ? (
-                  <div className='flex items-center gap-2'>
-                    <Loader2 className='animate-spin' />
-                    جاري الحفظ...
-                  </div>
-                ) : (
-                  'حفظ التغييرات'
-                )}
-              </Button>
+        {/* منطقة عرض الفيديو */}
+        <div className='flex-1 h-full bg-black'>
+          {activeVideo ? (
+            <EnhancedVideoPlayer
+              src={activeVideo}
+              thumbnailUrl={course.thumbnail}
+              onProgress={(progress) => {
+                console.log(`Video progress: ${progress}%`);
+                updateProgress(progress);
+              }}
+              autoPlay={true}
+              onLoadStart={() => setIsLoading(true)}
+              onLoaded={() => setIsLoading(false)}
+            />
+          ) : (
+            <div className='w-full h-full flex items-center justify-center'>
+              <p className='text-gray-400'>اختر فيديو للمشاهدة</p>
             </div>
           )}
         </div>
+
+        {/* زر حفظ التغييرات للمشرف */}
+        {isAdmin && (
+          <div className='fixed bottom-4 right-4 z-50'>
+            <Button
+              onClick={saveCourseChanges}
+              disabled={isLoading}
+              className='bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg shadow-lg'
+            >
+              {isLoading ? (
+                <div className='flex items-center gap-2'>
+                  <Loader2 className='animate-spin' />
+                  جاري الحفظ...
+                </div>
+              ) : (
+                'حفظ التغييرات'
+              )}
+            </Button>
+          </div>
+        )}
       </div>
     </ThemeProvider>
   );

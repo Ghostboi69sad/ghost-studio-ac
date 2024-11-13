@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useRef, ChangeEvent, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Input } from "./ui/input"
@@ -56,8 +58,8 @@ export default function CourseCreator2({ initialCourse, onSave, readOnly }: Cour
     })
   }, [lessons])
 
-  const handleAddLesson = async () => {
-    if (!currentLessonTitle || !currentLessonUrl) return
+  const handleAddLesson = () => {
+    if (!currentLessonTitle || !currentLessonUrl) return;
 
     const newLesson: Lesson = {
       id: uuidv4(),
@@ -65,21 +67,21 @@ export default function CourseCreator2({ initialCourse, onSave, readOnly }: Cour
       videoUrl: currentLessonUrl,
       duration: currentLessonDuration.toString(),
       thumbnailUrl: ''
-    }
+    };
 
-    setLessons(prevLessons => [...prevLessons, newLesson])
-    setCurrentLessonTitle('')
-    setCurrentLessonUrl('')
-    setCurrentLessonDuration(0)
-  }
+    setLessons(prevLessons => [...prevLessons, newLesson]);
+    setCurrentLessonTitle('');
+    setCurrentLessonUrl('');
+    setCurrentLessonDuration(0);
+  };
 
-  const handleCreateCourse = async () => {
+  const handleCreateCourse = () => {
     if (!user || user.role !== 'admin') {
-      console.error('Unauthorized access')
-      return
+      console.error('Unauthorized access');
+      return;
     }
 
-    const courseRef = push(dbRef(database, 'courses'))
+    const courseRef = push(dbRef(database, 'courses'));
     const courseData = {
       name: courseName,
       description: courseDescription,
@@ -89,11 +91,12 @@ export default function CourseCreator2({ initialCourse, onSave, readOnly }: Cour
       lessons: lessons.map(({ id, title, videoUrl, duration }) => ({ id, title, videoUrl, duration })),
       createdBy: user.uid,
       createdAt: new Date().toISOString()
-    }
+    };
 
-    await set(courseRef, courseData)
-    router.push('/courses')
-  }
+    set(courseRef, courseData)
+      .then(() => router.push('/courses'))
+      .catch(error => console.error('Error creating course:', error));
+  };
 
   const handleVideoMetadataLoaded = (duration: number) => {
     setCurrentLessonDuration(duration);

@@ -1,10 +1,5 @@
 import { NextResponse } from 'next/server';
 import { initAdmin } from '../../../../lib/firebase-admin';
-import Stripe from 'stripe';
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2023-08-16'
-});
 
 export async function POST(request: Request) {
   try {
@@ -23,7 +18,6 @@ export async function POST(request: Request) {
     const { courseId } = await request.json();
     const userId = decodedToken.uid;
 
-    // التحقق من صلاحيات المشرف
     const userRecord = await auth.getUser(userId);
     const isAdmin = userRecord.customClaims?.admin === true;
 
@@ -45,7 +39,6 @@ export async function POST(request: Request) {
       role: 'user'
     };
 
-    // التحقق من الدورة
     const courseRef = db.ref(`courses/${courseId}`);
     const courseSnapshot = await courseRef.once('value');
     const courseData = courseSnapshot.val();
@@ -58,7 +51,6 @@ export async function POST(request: Request) {
       }, { status: 404 });
     }
 
-    // التحقق من الشراء السابق للدورة
     const purchaseRef = db.ref(`users/${userId}/purchases/${courseId}`);
     const purchaseSnapshot = await purchaseRef.once('value');
     const hasPurchased = purchaseSnapshot.exists();
@@ -71,7 +63,6 @@ export async function POST(request: Request) {
       });
     }
 
-    // التحقق من نوع الوصول للدورة
     if (courseData.accessType === 'free') {
       return NextResponse.json({
         isValid: true,
@@ -80,33 +71,25 @@ export async function POST(request: Request) {
       });
     }
 
-    // التحقق من الاشتراك
     const userRef = db.ref(`users/${userId}/subscription`);
     const subscriptionSnapshot = await userRef.once('value');
     const subscriptionData = subscriptionSnapshot.val();
 
-    if (courseData.accessType === 'subscription' && subscriptionData?.stripeSubscriptionId) {
+    if (courseData.accessType === 'subscription' && subscriptionData?.paypalSubscriptionId) {
       try {
-        const subscription = await stripe.subscriptions.retrieve(subscriptionData.stripeSubscriptionId);
-        response.courseAccess = subscription.status === 'active';
+        const subscriptionStatus = subscriptionData.status;
+        response.courseAccess = subscriptionStatus === 'active';
         
-        if (subscription.status === 'active') {
-          await userRef.update({
-            status: subscription.status,
-            currentPeriodEnd: new Date(subscription.current_period_end * 1000).toISOString(),
-            updatedAt: new Date().toISOString(),
-            planId: subscription.items.data[0].price.id
-          });
-
+        if (subscriptionStatus === 'active') {
           response.subscriptionDetails = {
-            planId: subscription.items.data[0].price.id,
-            status: subscription.status,
-            currentPeriodEnd: new Date(subscription.current_period_end * 1000).toISOString(),
+            planId: subscriptionData.planId,
+            status: subscriptionStatus,
+            currentPeriodEnd: subscriptionData.currentPeriodEnd,
             subscriptionType: 'subscription'
           };
         }
       } catch (error) {
-        console.error('Stripe subscription check error:', error);
+        console.error('PayPal subscription check error:', error);
       }
     }
 

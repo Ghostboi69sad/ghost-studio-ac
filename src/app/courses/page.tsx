@@ -72,21 +72,15 @@ export default function CoursesPage() {
   }
 
   return (
-    <div className='min-h-screen'>
-      <div className="flex justify-end gap-4 p-4">
-        <Button
-          onClick={() => router.push('/pricing-plan')}
-          variant="outline"
-        >
-          خطط الاشتراك
-        </Button>
+    <div className='min-h-screen bg-black'>
+      <div className="flex justify-end gap-4 p-4 bg-black">
         <Button
           onClick={() => setShowPaidCourses(!showPaidCourses)}
           variant="outline"
-          className="flex items-center gap-2"
+          className="flex items-center gap-2 bg-transparent border-amber-400 text-amber-400 hover:bg-amber-400/10 hover:text-amber-300 transition-colors duration-200"
         >
           <CreditCard className="h-4 w-4" />
-          {showPaidCourses ? 'جميع الدورات' : 'الدورات المدفوعة'}
+          {showPaidCourses ? 'All Courses' : 'VIP Courses'}
         </Button>
       </div>
       
