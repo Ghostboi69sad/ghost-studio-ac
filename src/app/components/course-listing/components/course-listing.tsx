@@ -236,7 +236,7 @@ export function CourseListingComponent() {
     e.stopPropagation();
     
     if (!user) {
-      window.location.href = '/login';
+      router.push('/login');
       return;
     }
 
@@ -249,7 +249,7 @@ export function CourseListingComponent() {
         return;
       }
 
-      window.location.href = `/courses/${courseId}/edit`;
+      router.push(`/courses/${courseId}/edit`);
     } catch (error) {
       console.error('خطأ في الوصول إلى الدورة:', error);
       toast.error('حدث خطأ في الوصول إلى الدورة');
@@ -497,11 +497,11 @@ export function CourseListingComponent() {
                 <CardFooter className='flex justify-between items-center'>
                   <Button
                     variant='outline'
-                    onClick={() => window.location.href = `/courses/${course.id}/edit`}
+                    onClick={() => router.push(`/courses/${course.id}/edit`)}
                     className='text-purple-400 border-purple-400 hover:bg-purple-400 hover:text-white'
                   >
-                    <Edit className='w-4 h-4 mr-2 text-purple-400' />
-                    <span className='text-purple-400'>View Course</span>
+                    <Edit className='w-4 h-4 mr-2' />
+                    <span>View Course</span>
                   </Button>
                   {user?.role === 'admin' && (
                     <Dialog>

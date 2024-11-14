@@ -28,6 +28,7 @@ export default function EditCoursePage({ params: { id } }: { params: { id: strin
 
     const checkAccess = async () => {
       try {
+        setLoading(true);
         // التحقق من صلاحيات المشرف
         if (user.role === 'admin') {
           const courseRef = ref(database, `courses/${id}`);
@@ -83,11 +84,13 @@ export default function EditCoursePage({ params: { id } }: { params: { id: strin
         console.error('خطأ في التحقق من الوصول:', error);
         toast.error('حدث خطأ في التحقق من صلاحيات الوصول');
         router.push('/courses');
+      } finally {
+        setLoading(false);
       }
     };
 
     checkAccess();
-  }, [id, user, router]);
+  }, [user, router, id]);
 
   const handleCourseUpdate = async (updatedCourse: Course) => {
     try {
