@@ -249,7 +249,7 @@ export function CourseListingComponent() {
         return;
       }
 
-      router.push(`/courses/${courseId}/edit`);
+      await router.push(`/courses/${courseId}/edit`);
     } catch (error) {
       console.error('خطأ في الوصول إلى الدورة:', error);
       toast.error('حدث خطأ في الوصول إلى الدورة');

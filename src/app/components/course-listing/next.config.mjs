@@ -28,6 +28,20 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  async redirects() {
+    return [
+      {
+        source: '/courses/:id/edit',
+        destination: '/courses/:id',
+        permanent: false,
+      },
+    ];
+  },
+  pages: {
+    '/courses/:id/edit': {
+      ssr: false,
+    },
+  },
 };
 
 export default nextConfig;
