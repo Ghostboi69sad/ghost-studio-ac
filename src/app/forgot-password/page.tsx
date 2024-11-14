@@ -22,7 +22,7 @@ export default function ForgotPasswordPage() {
     try {
       await sendPasswordResetEmail(auth, email);
       toast.success('تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني');
-      router.push('/login');
+      window.location.href = '/login';
     } catch (error: any) {
       console.error('Error sending reset email:', error);
       toast.error(error.message || 'فشل في إرسال رابط إعادة تعيين كلمة المرور');
