@@ -18,7 +18,9 @@
     "format:fix": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,md}\" --config .prettierrc",
     "backup": "ts-node src/scripts/manage-backups.ts backup",
     "restore": "ts-node src/scripts/manage-backups.ts restore",
-    "netlify-build": "NEXT_PUBLIC_FIREBASE_PRIVATE_KEY=\"$(echo $FIREBASE_PRIVATE_KEY | base64 -d)\" next build"
+    "netlify-build": "NEXT_PUBLIC_FIREBASE_PRIVATE_KEY=\"$(echo $FIREBASE_PRIVATE_KEY | base64 -d)\" next build",
+    "vercel-build": "yarn install && next build",
+    "start:prod": "next start -p $PORT"
   },
   "dependencies": {
     "@aws-sdk/client-cloudfront": "^3.682.0",

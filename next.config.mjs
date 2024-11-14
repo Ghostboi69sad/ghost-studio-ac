@@ -8,6 +8,12 @@ const __dirname = dirname(__filename);
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'standalone',
+  reactStrictMode: true,
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '2mb'
+    },
+  },
   images: {
     domains: [
       'firebasestorage.googleapis.com',
@@ -27,20 +33,12 @@ const nextConfig = {
           { key: 'Access-Control-Allow-Origin', value: process.env.NEXT_PUBLIC_APP_URL || '*' },
           { key: 'Access-Control-Allow-Methods', value: 'GET,POST,PUT,DELETE,OPTIONS' },
           { key: 'Access-Control-Allow-Headers', value: 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization' },
+          { key: 'Strict-Transport-Security', value: 'max-age=31536000; includeSubDomains' },
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+          { key: 'X-Frame-Options', value: 'DENY' },
+          { key: 'X-XSS-Protection', value: '1; mode=block' },
+          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' }
         ]
-      }
-    ];
-  },
-  // إضافة rewrites للتعامل مع مسارات API
-  async rewrites() {
-    return [
-      {
-        source: '/api/subscription/check-status',
-        destination: '/api/subscription/check-status'
-      },
-      {
-        source: '/api/checkout/create-session',
-        destination: '/api/checkout/create-session'
       }
     ];
   },
@@ -56,13 +54,17 @@ const nextConfig = {
     };
     return config;
   },
+  onError: (error) => {
+    console.error('Next.js error:', error);
+  },
   typescript: {
-    ignoreBuildErrors: true
+    ignoreBuildErrors: false
   },
   eslint: {
-    ignoreDuringBuilds: true
+    ignoreDuringBuilds: false
   },
-  swcMinify: true
+  swcMinify: true,
+  poweredByHeader: false
 };
 
 export default nextConfig;
