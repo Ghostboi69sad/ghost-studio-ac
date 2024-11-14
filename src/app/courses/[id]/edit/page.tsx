@@ -1,72 +1,107 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useAuth } from '@/lib/auth-context';
-import { database } from '@/lib/firebase';
-import { ref, get } from 'firebase/database';
-import { toast } from 'react-toastify';
+import { database } from '../../../../lib/firebase';
+import { ref, onValue } from 'firebase/database';
+import { useAuth } from '../../../lib/auth-context';
+import { isAdminUser } from '../../../lib/auth-helpers';
+import DomestikaCourseCreator from '../../../components/course-creator/components/domestika-creator';
+import { Course } from '../../../components/course-creator/types/course';
+import { toast } from 'react-hot-toast';
+import { Loader2 } from 'lucide-react';
 
 export default function EditCoursePage() {
-  const params = useParams();
-  const router = useRouter();
+  const [course, setCourse] = useState<Course | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const { id } = useParams();
   const { user } = useAuth();
-  const [loading, setLoading] = useState(true);
-  const [course, setCourse] = useState(null);
+  const router = useRouter();
 
   useEffect(() => {
-    const checkAuthAndLoadCourse = async () => {
+    if (!user) {
+      router.push('/login');
+      return;
+    }
+
+    if (!isAdminUser(user)) {
+      toast.error('لا تملك الصلاحيات الكافية لتحرير الدورة');
+      router.push('/courses');
+      return;
+    }
+
+    const courseRef = ref(database, `courses/${id}`);
+    const unsubscribe = onValue(courseRef, (snapshot) => {
+      setIsLoading(false);
+      if (snapshot.exists()) {
+        const data = snapshot.val();
+        setCourse({ id: snapshot.key as string, ...data });
+      } else {
+        toast.error('الدورة غير موجودة');
+        router.push('/courses');
+      }
+    });
+
+    return () => unsubscribe();
+  }, [id, user, router]);
+
+  const handleCourseUpdate = async (updatedCourse: Course) => {
+    try {
       if (!user) {
-        router.push('/login');
+        toast.error('يجب تسجيل الدخول أولاً');
+        window.location.href = '/login';
         return;
       }
 
-      try {
-        // التحقق من صلاحيات المستخدم
-        const userRef = ref(database, `users/${user.uid}`);
-        const userSnapshot = await get(userRef);
-        const userData = userSnapshot.val();
-
-        if (userData?.role !== 'admin') {
-          toast.error('غير مصرح لك بتحرير الدورات');
-          router.push('/courses');
-          return;
-        }
-
-        // تحميل بيانات الدورة
-        const courseRef = ref(database, `courses/${params.id}`);
-        const courseSnapshot = await get(courseRef);
-
-        if (!courseSnapshot.exists()) {
-          toast.error('الدورة غير موجودة');
-          router.push('/courses');
-          return;
-        }
-
-        setCourse(courseSnapshot.val());
-        setLoading(false);
-      } catch (error) {
-        console.error('خطأ:', error);
-        toast.error('حدث خطأ في تحميل الدورة');
-        router.push('/courses');
+      if (!isAdminUser(user)) {
+        toast.error('لا تملك الصلاحيات الكافية لتحديث الدورة');
+        return;
       }
-    };
 
-    checkAuthAndLoadCourse();
-  }, [user, params.id, router]);
+      const token = await user.getIdToken();
+      const response = await fetch(`/api/courses/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(updatedCourse)
+      });
 
-  if (loading) {
+      if (!response.ok) {
+        throw new Error('فشل تحديث الدورة');
+      }
+
+      toast.success('تم تحديث الدورة بنجاح');
+      window.location.href = `/courses/${id}`;
+    } catch (error) {
+      console.error('خطأ في تحديث الدورة:', error);
+      toast.error('فشل تحديث الدورة');
+    }
+  };
+
+  if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-xl">جاري التحميل...</div>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-900 to-indigo-800">
+        <Loader2 className="w-8 h-8 animate-spin text-white" />
+      </div>
+    );
+  }
+
+  if (!course) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-xl text-red-500">الدورة غير موجودة</div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-4">تحرير الدورة</h1>
-      {/* أضف نموذج تحرير الدورة هنا */}
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 to-indigo-800">
+      <DomestikaCourseCreator
+        initialCourse={course}
+        onSave={handleCourseUpdate}
+      />
     </div>
   );
 }
