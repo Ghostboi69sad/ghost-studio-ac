@@ -231,13 +231,28 @@ export function CourseListingComponent() {
     }
   };
 
-  const handleEditCourse = (courseId: string, e: React.MouseEvent) => {
+  const handleEditCourse = async (courseId: string, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (user?.role === 'admin') {
+    
+    if (!user) {
+      router.push('/login');
+      return;
+    }
+
+    try {
+      const courseRef = ref(database, `courses/${courseId}`);
+      const snapshot = await get(courseRef);
+      
+      if (!snapshot.exists()) {
+        toast.error('الدورة غير موجودة');
+        return;
+      }
+
       router.push(`/courses/${courseId}/edit`);
-    } else {
-      router.push(`/courses/${courseId}`);
+    } catch (error) {
+      console.error('خطأ في الوصول إلى الدورة:', error);
+      toast.error('حدث خطأ في الوصول إلى الدورة');
     }
   };
 
