@@ -21,7 +21,6 @@ const nextConfig = {
     };
     return config;
   },
-  basePath: '/course-listing',
   onError: (error) => {
     console.error('Next.js error:', error);
   },
@@ -29,18 +28,17 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   async redirects() {
-    return [
-      {
-        source: '/courses/:id/edit',
-        destination: '/courses/:id',
-        permanent: false,
-      },
-    ];
+    return [];
   },
-  pages: {
-    '/courses/:id/edit': {
-      ssr: false,
-    },
+  rewrites: async () => {
+    return {
+      beforeFiles: [
+        {
+          source: '/courses/:path*',
+          destination: '/courses/:path*',
+        },
+      ],
+    };
   },
 };
 

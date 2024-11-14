@@ -186,7 +186,7 @@ export function CourseListingComponent() {
 
   const handlePurchaseCourse = async (course: Course) => {
     if (!user) {
-      router.push('/login');
+      window.location.href = '/login';
       return;
     }
 
@@ -200,14 +200,22 @@ export function CourseListingComponent() {
         body: JSON.stringify({
           courseId: course.id,
           userId: user.uid,
-          amount: course.price
+          amount: course.price,
+          type: 'course'
         }),
       });
 
-      if (!response.ok) throw new Error('فشل الدفع');
+      const data = await response.json();
 
-      const { orderId } = await response.json();
-      window.location.href = `${process.env.NEXT_PUBLIC_PAYPAL_URL}/${orderId}`;
+      if (!response.ok) {
+        throw new Error(data.error || 'فشل في إنشاء جلسة الدفع');
+      }
+
+      if (data.approvalUrl) {
+        window.location.href = data.approvalUrl;
+      } else {
+        throw new Error('لم يتم العثور على رابط الدفع');
+      }
     } catch (error) {
       console.error('خطأ في الدفع:', error);
       toast.error('فشل في إنشاء جلسة الدفع');
@@ -249,7 +257,8 @@ export function CourseListingComponent() {
         return;
       }
 
-      await router.push(`/courses/${courseId}/edit`);
+      router.push(`/courses/${courseId}/edit`);
+      
     } catch (error) {
       console.error('خطأ في الوصول إلى الدورة:', error);
       toast.error('حدث خطأ في الوصول إلى الدورة');
