@@ -14,47 +14,61 @@ import { Loader2 } from 'lucide-react';
 export default function EditCoursePage() {
   const [course, setCourse] = useState<Course | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const { id } = useParams();
+  const params = useParams();
   const { user } = useAuth();
   const router = useRouter();
+  const id = params?.id as string;
 
   useEffect(() => {
-    if (!user) {
-      router.push('/login');
-      return;
-    }
+    let unsubscribe: (() => void) | undefined;
 
-    if (!isAdminUser(user)) {
-      toast.error('لا تملك الصلاحيات الكافية لتحرير الدورة');
-      router.push('/courses');
-      return;
-    }
+    const checkAuth = async () => {
+      try {
+        if (!user) {
+          toast.error('يجب تسجيل الدخول أولاً');
+          router.replace('/login');
+          return;
+        }
 
-    const courseRef = ref(database, `courses/${id}`);
-    const unsubscribe = onValue(courseRef, (snapshot) => {
-      setIsLoading(false);
-      if (snapshot.exists()) {
-        const data = snapshot.val();
-        setCourse({ id: snapshot.key as string, ...data });
-      } else {
-        toast.error('الدورة غير موجودة');
-        router.push('/courses');
+        if (!isAdminUser(user)) {
+          toast.error('لا تملك الصلاحيات الكافية');
+          router.replace('/courses');
+          return;
+        }
+
+        const courseRef = ref(database, `courses/${id}`);
+        unsubscribe = onValue(courseRef, (snapshot) => {
+          setIsLoading(false);
+          if (snapshot.exists()) {
+            const data = snapshot.val();
+            setCourse({ id: snapshot.key as string, ...data });
+          } else {
+            toast.error('الدورة غير موجودة');
+            router.replace('/courses');
+          }
+        });
+      } catch (error) {
+        console.error('خطأ في التحقق من المستخدم:', error);
+        toast.error('حدث خطأ ما');
+        router.replace('/courses');
       }
-    });
+    };
 
-    return () => unsubscribe();
+    checkAuth();
+    
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
   }, [id, user, router]);
 
   const handleCourseUpdate = async (updatedCourse: Course) => {
     try {
-      if (!user) {
-        toast.error('يجب تسجيل الدخول أولاً');
-        window.location.href = '/login';
-        return;
-      }
-
-      if (!isAdminUser(user)) {
-        toast.error('لا تملك الصلاحيات الكافية لتحديث الدورة');
+      setIsLoading(true);
+      
+      if (!user || !isAdminUser(user)) {
+        toast.error('لا تملك الصلاحيات الكافية');
         return;
       }
 
@@ -73,10 +87,12 @@ export default function EditCoursePage() {
       }
 
       toast.success('تم تحديث الدورة بنجاح');
-      window.location.href = `/courses/${id}`;
+      router.replace(`/courses/${id}`);
     } catch (error) {
       console.error('خطأ في تحديث الدورة:', error);
       toast.error('فشل تحديث الدورة');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -88,20 +104,18 @@ export default function EditCoursePage() {
     );
   }
 
-  if (!course) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-xl text-red-500">الدورة غير موجودة</div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 to-indigo-800">
-      <DomestikaCourseCreator
-        initialCourse={course}
-        onSave={handleCourseUpdate}
-      />
+      {course ? (
+        <DomestikaCourseCreator
+          initialCourse={course}
+          onSave={handleCourseUpdate}
+        />
+      ) : (
+        <div className="flex items-center justify-center h-full">
+          <div className="text-xl text-white">الدورة غير موجودة</div>
+        </div>
+      )}
     </div>
   );
 }
