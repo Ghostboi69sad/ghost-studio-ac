@@ -16,6 +16,7 @@ const nextConfig = {
       process.env.NEXT_PUBLIC_S3_BUCKET && 
         `${process.env.NEXT_PUBLIC_S3_BUCKET}.s3.${process.env.NEXT_PUBLIC_AWS_REGION}.amazonaws.com`
     ].filter(Boolean),
+    unoptimized: true
   },
   async headers() {
     return [

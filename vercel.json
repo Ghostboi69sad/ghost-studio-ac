@@ -53,9 +53,9 @@
     }
   ],
   "env": {
-    "NEXT_PUBLIC_APP_URL": "https://ghost-studio-ac-scvl.vercel.app/",
-    "NEXT_PUBLIC_PAYPAL_CLIENT_ID": "your_client_id",
-    "PAYPAL_SECRET_KEY": "your_secret_key"
+    "NEXT_PUBLIC_APP_URL": "https://ghoststudioacademy.store/",
+    "NEXT_PUBLIC_PAYPAL_CLIENT_ID": "AYlH3nEqSZfyL-pUeEr4QQfIja0VmO7FfijEJnvEnVgeB2CXnr-ukx9v3DMNAY2S5FCAZhLMT4AJPJSv",
+    "PAYPAL_SECRET_KEY": "EG3_I3ZyVXXheQFX8l6I-21sGsu_ROXR4luGfvxPpnQnFNn-t7mLZW2E6wx1RjyOSnZAJjj5fJjkpvoZ"
   },
   "github": {
     "silent": true,
