@@ -27,7 +27,6 @@
     ],
     "types": [
       "node",
-      "@paypal/checkout-server-sdk",
       "react-hot-toast",
       "react-toastify"
     ],

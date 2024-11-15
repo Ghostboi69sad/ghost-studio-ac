@@ -9,6 +9,14 @@ declare module '@paypal/checkout-server-sdk' {
         rel: string;
         method?: string;
       }>;
+      status?: string;
+      purchase_units?: Array<{
+        amount: {
+          currency_code: string;
+          value: string;
+        };
+        custom_id?: string;
+      }>;
     }
 
     export namespace core {
@@ -44,6 +52,8 @@ declare module '@paypal/checkout-server-sdk' {
       }
     }
   }
+
+  const paypal: typeof paypal;
   export = paypal;
 }
 
