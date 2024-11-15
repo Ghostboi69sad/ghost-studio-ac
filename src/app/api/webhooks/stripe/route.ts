@@ -4,7 +4,7 @@ import { initAdmin } from '../../../../lib/firebase-admin';
 import Stripe from 'stripe';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2023-08-16'
+  apiVersion: '2023-08-16',
 });
 
 export async function POST(request: Request) {
@@ -14,10 +14,7 @@ export async function POST(request: Request) {
     const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
     if (!signature || !webhookSecret) {
-      return NextResponse.json(
-        { error: 'Missing signature or webhook secret' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Missing signature or webhook secret' }, { status: 400 });
     }
 
     const event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
@@ -38,7 +35,7 @@ export async function POST(request: Request) {
             planId: subscription.items.data[0].price.id,
             subscriptionType: 'subscription',
             accessType: 'subscription',
-            updatedAt: new Date().toISOString()
+            updatedAt: new Date().toISOString(),
           });
         }
         break;
@@ -53,7 +50,7 @@ export async function POST(request: Request) {
           await userRef.update({
             status: 'canceled',
             currentPeriodEnd: new Date(subscription.current_period_end * 1000).toISOString(),
-            updatedAt: new Date().toISOString()
+            updatedAt: new Date().toISOString(),
           });
         }
         break;
@@ -68,4 +65,4 @@ export async function POST(request: Request) {
       { status: 400 }
     );
   }
-} 
+}

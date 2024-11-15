@@ -17,4 +17,4 @@ export const adminConfig = {
   databaseURL: process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL,
 };
 
-export default firebaseConfig; 
+export default firebaseConfig;

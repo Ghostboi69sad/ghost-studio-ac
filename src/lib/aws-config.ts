@@ -10,8 +10,8 @@ export const awsConfig = {
   cloudfrontDomain: process.env.NEXT_PUBLIC_CLOUDFRONT_DOMAIN,
   credentials: {
     accessKeyId: process.env.NEXT_PUBLIC_AWS_ACCESS_KEY_ID || '',
-    secretAccessKey: process.env.NEXT_PUBLIC_AWS_SECRET_ACCESS_KEY || ''
-  } as AwsCredentialIdentity
+    secretAccessKey: process.env.NEXT_PUBLIC_AWS_SECRET_ACCESS_KEY || '',
+  } as AwsCredentialIdentity,
 };
 
 // التحقق من وجود المفاتيح المطلوبة
@@ -22,7 +22,7 @@ if (!process.env.NEXT_PUBLIC_AWS_ACCESS_KEY_ID || !process.env.NEXT_PUBLIC_AWS_S
 export const s3Client = new S3Client({
   region: awsConfig.region,
   credentials: awsConfig.credentials,
-  forcePathStyle: false
+  forcePathStyle: false,
 });
 
 export function getS3Url(key: string): string {
@@ -34,7 +34,7 @@ export function getS3Url(key: string): string {
 export async function uploadToS3(file: File, key: string) {
   try {
     const buffer = Buffer.from(await file.arrayBuffer());
-    
+
     const command = new PutObjectCommand({
       Bucket: awsConfig.bucket,
       Key: key,
@@ -50,23 +50,26 @@ export async function uploadToS3(file: File, key: string) {
   }
 }
 
-export async function getPresignedUploadUrl(key: string, contentType: string): Promise<{ uploadUrl: string; url: string }> {
+export async function getPresignedUploadUrl(
+  key: string,
+  contentType: string
+): Promise<{ uploadUrl: string; url: string }> {
   const command = new PutObjectCommand({
     Bucket: awsConfig.bucket,
     Key: key,
     ContentType: contentType,
-    ServerSideEncryption: 'AES256'
+    ServerSideEncryption: 'AES256',
   });
 
   try {
     const uploadUrl = await getSignedUrl(s3Client, command, {
       expiresIn: 3600,
-      signableHeaders: new Set(['content-type', 'x-amz-server-side-encryption'])
+      signableHeaders: new Set(['content-type', 'x-amz-server-side-encryption']),
     });
 
-    return { 
-      uploadUrl, 
-      url: getS3Url(key)
+    return {
+      uploadUrl,
+      url: getS3Url(key),
     };
   } catch (error) {
     console.error('Error generating presigned URL:', error);
@@ -76,10 +79,10 @@ export async function getPresignedUploadUrl(key: string, contentType: string): P
 
 export function validateAwsConfig() {
   const requiredEnvVars = {
-    'NEXT_PUBLIC_AWS_ACCESS_KEY_ID': process.env.NEXT_PUBLIC_AWS_ACCESS_KEY_ID,
-    'NEXT_PUBLIC_AWS_SECRET_ACCESS_KEY': process.env.NEXT_PUBLIC_AWS_SECRET_ACCESS_KEY,
-    'NEXT_PUBLIC_AWS_REGION': process.env.NEXT_PUBLIC_AWS_REGION,
-    'NEXT_PUBLIC_S3_BUCKET': process.env.NEXT_PUBLIC_S3_BUCKET
+    NEXT_PUBLIC_AWS_ACCESS_KEY_ID: process.env.NEXT_PUBLIC_AWS_ACCESS_KEY_ID,
+    NEXT_PUBLIC_AWS_SECRET_ACCESS_KEY: process.env.NEXT_PUBLIC_AWS_SECRET_ACCESS_KEY,
+    NEXT_PUBLIC_AWS_REGION: process.env.NEXT_PUBLIC_AWS_REGION,
+    NEXT_PUBLIC_S3_BUCKET: process.env.NEXT_PUBLIC_S3_BUCKET,
   };
 
   const missingVars = Object.entries(requiredEnvVars)
@@ -89,4 +92,4 @@ export function validateAwsConfig() {
   if (missingVars.length > 0) {
     throw new Error(`Missing required environment variables: ${missingVars.join(', ')}`);
   }
-} 
+}

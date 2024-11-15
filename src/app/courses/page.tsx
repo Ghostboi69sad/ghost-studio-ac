@@ -7,7 +7,7 @@ import { CourseListingComponent } from '../components/course-listing/components/
 import { PaidCoursesListing } from '../components/course-listing/components/paid-courses-listing';
 import { Loader2, CreditCard, Edit } from 'lucide-react';
 import { Course } from '../components/course-creator/types/course';
-import { Button } from '../components/course-listing/components/ui/button'
+import { Button } from '../components/course-listing/components/ui/button';
 
 export default function CoursesPage() {
   const { user } = useAuth();
@@ -30,8 +30,8 @@ export default function CoursesPage() {
         const response = await fetch(`${API_BASE_URL}/courses`, {
           headers: {
             'user-id': user.uid,
-            'Content-Type': 'application/json'
-          }
+            'Content-Type': 'application/json',
+          },
         });
 
         if (!response.ok) {
@@ -57,33 +57,31 @@ export default function CoursesPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="animate-spin h-8 w-8" />
+      <div className='min-h-screen flex items-center justify-center'>
+        <Loader2 className='animate-spin h-8 w-8' />
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-red-500">
-        {error}
-      </div>
+      <div className='min-h-screen flex items-center justify-center text-red-500'>{error}</div>
     );
   }
 
   return (
     <div className='min-h-screen bg-black'>
-      <div className="flex justify-end gap-4 p-4 bg-black">
+      <div className='flex justify-end gap-4 p-4 bg-black'>
         <Button
           onClick={() => setShowPaidCourses(!showPaidCourses)}
-          variant="outline"
-          className="flex items-center gap-2 bg-transparent border-amber-400 text-amber-400 hover:bg-amber-400/10 hover:text-amber-300 transition-colors duration-200"
+          variant='outline'
+          className='flex items-center gap-2 bg-transparent border-amber-400 text-amber-400 hover:bg-amber-400/10 hover:text-amber-300 transition-colors duration-200'
         >
-          <CreditCard className="h-4 w-4" />
+          <CreditCard className='h-4 w-4' />
           {showPaidCourses ? 'All Courses' : 'VIP Courses'}
         </Button>
       </div>
-      
+
       {showPaidCourses ? <PaidCoursesListing /> : <CourseListingComponent />}
     </div>
   );

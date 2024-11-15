@@ -10,17 +10,14 @@ export async function POST(req: Request) {
     validateAwsConfig();
 
     const { fileName, fileType } = await req.json();
-    
+
     if (!fileName || !fileType) {
-      return NextResponse.json(
-        { error: 'fileName and fileType are required' }, 
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'fileName and fileType are required' }, { status: 400 });
     }
 
     const fileExtension = fileName.split('.').pop();
     const uniqueFileName = `${uuidv4()}.${fileExtension}`;
-    const fileKey = fileType.startsWith('video/') 
+    const fileKey = fileType.startsWith('video/')
       ? `videos/${uniqueFileName}`
       : `files/${uniqueFileName}`;
 
@@ -28,19 +25,19 @@ export async function POST(req: Request) {
       Bucket: awsConfig.bucket,
       Key: fileKey,
       ContentType: fileType,
-      ServerSideEncryption: 'AES256'
+      ServerSideEncryption: 'AES256',
     });
 
     const uploadUrl = await getSignedUrl(s3Client, command, {
       expiresIn: 3600,
-      signableHeaders: new Set(['content-type', 'host', 'x-amz-server-side-encryption'])
+      signableHeaders: new Set(['content-type', 'host', 'x-amz-server-side-encryption']),
     });
 
     return NextResponse.json({
       success: true,
       uploadUrl,
       url: `${awsConfig.cloudfrontDomain}/${fileKey}`,
-      fileKey
+      fileKey,
     });
   } catch (error) {
     console.error('Error:', error);
@@ -49,4 +46,4 @@ export async function POST(req: Request) {
       { status: 500 }
     );
   }
-} 
+}

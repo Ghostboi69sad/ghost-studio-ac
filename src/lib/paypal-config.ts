@@ -5,15 +5,16 @@ if (!process.env.PAYPAL_CLIENT_ID || !process.env.PAYPAL_CLIENT_SECRET) {
 }
 
 // إعداد البيئة المناسبة
-const environment = process.env.NODE_ENV === 'production'
-  ? new paypal.core.LiveEnvironment(
-      process.env.PAYPAL_CLIENT_ID,
-      process.env.PAYPAL_CLIENT_SECRET
-    )
-  : new paypal.core.SandboxEnvironment(
-      process.env.PAYPAL_CLIENT_ID,
-      process.env.PAYPAL_CLIENT_SECRET
-    );
+const environment =
+  process.env.NODE_ENV === 'production'
+    ? new paypal.core.LiveEnvironment(
+        process.env.PAYPAL_CLIENT_ID,
+        process.env.PAYPAL_CLIENT_SECRET
+      )
+    : new paypal.core.SandboxEnvironment(
+        process.env.PAYPAL_CLIENT_ID,
+        process.env.PAYPAL_CLIENT_SECRET
+      );
 
 // إنشاء عميل PayPal
 export const paypalClient = new paypal.core.PayPalHttpClient(environment);
@@ -25,15 +26,17 @@ export const isProduction = () => process.env.NODE_ENV === 'production';
 export async function createPaypalOrder(amount: number, currency: string = 'USD') {
   try {
     const request = new paypal.orders.OrdersCreateRequest();
-    request.prefer("return=representation");
+    request.prefer('return=representation');
     request.requestBody({
       intent: 'CAPTURE',
-      purchase_units: [{
-        amount: {
-          currency_code: currency,
-          value: amount.toString()
-        }
-      }]
+      purchase_units: [
+        {
+          amount: {
+            currency_code: currency,
+            value: amount.toString(),
+          },
+        },
+      ],
     });
 
     const order = await paypalClient.execute(request);
@@ -66,4 +69,4 @@ export async function capturePaypalPayment(orderId: string) {
     console.error('PayPal payment capture error:', error);
     throw error;
   }
-} 
+}

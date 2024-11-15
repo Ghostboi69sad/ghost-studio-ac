@@ -7,7 +7,7 @@ export async function POST(request: Request) {
     const auth = getAuth();
     const db = getDatabase();
     const token = request.headers.get('authorization')?.split('Bearer ')[1];
-    
+
     if (!token) {
       return NextResponse.json({ error: 'غير مصرح' }, { status: 401 });
     }
@@ -19,12 +19,12 @@ export async function POST(request: Request) {
     const purchaseRef = db.ref(`purchases/${userId}/${courseId}`);
     const snapshot = await purchaseRef.get();
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       purchased: snapshot.exists(),
-      purchaseDetails: snapshot.val()
+      purchaseDetails: snapshot.val(),
     });
   } catch (error) {
     console.error('خطأ في التحقق من الشراء:', error);
     return NextResponse.json({ error: 'فشل التحقق من حالة الشراء' }, { status: 500 });
   }
-} 
+}

@@ -54,14 +54,12 @@ const nextConfig = {
     };
     return config;
   },
-  onError: (error) => {
-    console.error('Next.js error:', error);
+  eslint: {
+    dirs: ['src'],
+    ignoreDuringBuilds: false
   },
   typescript: {
     ignoreBuildErrors: false
-  },
-  eslint: {
-    ignoreDuringBuilds: false
   },
   swcMinify: true,
   poweredByHeader: false

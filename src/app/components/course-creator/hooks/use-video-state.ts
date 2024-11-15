@@ -22,7 +22,7 @@ export const useVideoState = (videoRef: React.RefObject<HTMLVideoElement>) => {
 
   const handleVolumeChange = useCallback((value: number) => {
     if (!videoRef.current) return;
-    
+
     videoRef.current.volume = value;
     setVolume(value);
     setIsMuted(value === 0);
@@ -30,21 +30,21 @@ export const useVideoState = (videoRef: React.RefObject<HTMLVideoElement>) => {
 
   const handleSeek = useCallback((value: number) => {
     if (!videoRef.current) return;
-    
+
     videoRef.current.currentTime = value;
     setCurrentTime(value);
   }, []);
 
   const handleTimeUpdate = useCallback(() => {
     if (!videoRef.current) return;
-    
+
     setCurrentTime(videoRef.current.currentTime);
     setBuffered(videoRef.current.buffered);
   }, []);
 
   const handleLoadedMetadata = useCallback(() => {
     if (!videoRef.current) return;
-    
+
     setDuration(videoRef.current.duration);
   }, []);
 
@@ -80,4 +80,4 @@ export const useVideoState = (videoRef: React.RefObject<HTMLVideoElement>) => {
     handleTimeUpdate,
     handleLoadedMetadata,
   };
-}; 
+};

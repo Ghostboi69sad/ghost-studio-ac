@@ -6,7 +6,7 @@ import { isAdminUser } from '../../../lib/auth-helpers';
 export async function DELETE(request: Request) {
   const headers = new Headers({
     'Content-Type': 'application/json',
-    'Access-Control-Allow-Origin': '*'
+    'Access-Control-Allow-Origin': '*',
   });
 
   try {
@@ -16,7 +16,7 @@ export async function DELETE(request: Request) {
     if (!userId || !(await isAdminUser(userId))) {
       return new Response(JSON.stringify({ error: 'غير مصرح لك بحذف الدورات' }), {
         status: 403,
-        headers
+        headers,
       });
     }
 
@@ -27,28 +27,33 @@ export async function DELETE(request: Request) {
     if (!courseSnapshot.exists()) {
       return new Response(JSON.stringify({ error: 'الدورة غير موجودة' }), {
         status: 404,
-        headers
+        headers,
       });
     }
 
     // حذف الدورة
     await remove(courseRef);
 
-    return new Response(JSON.stringify({ 
-      success: true,
-      message: 'تم حذف الدورة بنجاح'
-    }), { 
-      headers 
-    });
-
+    return new Response(
+      JSON.stringify({
+        success: true,
+        message: 'تم حذف الدورة بنجاح',
+      }),
+      {
+        headers,
+      }
+    );
   } catch (error) {
     console.error('خطأ في حذف الدورة:', error);
-    return new Response(JSON.stringify({ 
-      error: 'حدث خطأ أثناء حذف الدورة' 
-    }), { 
-      status: 500,
-      headers 
-    });
+    return new Response(
+      JSON.stringify({
+        error: 'حدث خطأ أثناء حذف الدورة',
+      }),
+      {
+        status: 500,
+        headers,
+      }
+    );
   }
 }
 
@@ -58,7 +63,7 @@ export async function OPTIONS() {
     headers: {
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'DELETE, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization'
-    }
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    },
   });
 }

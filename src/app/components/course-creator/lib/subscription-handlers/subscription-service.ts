@@ -2,7 +2,11 @@ import { SubscriptionPlan } from '../../types/payment';
 import { toast } from 'react-hot-toast';
 import { User } from 'firebase/auth';
 
-export async function checkSubscriptionStatus(userId: string, courseId?: string, user?: User): Promise<boolean> {
+export async function checkSubscriptionStatus(
+  userId: string,
+  courseId?: string,
+  user?: User
+): Promise<boolean> {
   try {
     if (!user) {
       throw new Error('المستخدم مطلوب للمصادقة');
@@ -11,14 +15,14 @@ export async function checkSubscriptionStatus(userId: string, courseId?: string,
     const token = await user.getIdToken();
     const response = await fetch('/api/subscription/check-status', {
       method: 'POST',
-      headers: { 
+      headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
+        Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({ 
+      body: JSON.stringify({
         courseId,
-        paymentMethod: 'paypal' 
-      })
+        paymentMethod: 'paypal',
+      }),
     });
 
     if (!response.ok) {

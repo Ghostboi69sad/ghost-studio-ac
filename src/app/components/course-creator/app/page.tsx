@@ -25,13 +25,15 @@ export default function Page() {
     enrolledStudents: 0,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
-    chapters: [{
-      id: uuidv4(),
-      title: 'Chapter 1',
-      order: 1,
-      content: [],
-      lessons: []
-    }]
+    chapters: [
+      {
+        id: uuidv4(),
+        title: 'Chapter 1',
+        order: 1,
+        content: [],
+        lessons: [],
+      },
+    ],
   };
 
   const handleSave = async (course: Course) => {
@@ -43,11 +45,5 @@ export default function Page() {
     }
   };
 
-  return (
-    <CourseCreation2 
-      initialCourse={initialCourse}
-      onSave={handleSave}
-      readOnly={false}
-    />
-  );
+  return <CourseCreation2 initialCourse={initialCourse} onSave={handleSave} readOnly={false} />;
 }

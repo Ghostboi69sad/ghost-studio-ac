@@ -1,4 +1,4 @@
- import { PayPalHttpClient } from '@paypal/checkout-server-sdk';
+import { PayPalHttpClient } from '@paypal/checkout-server-sdk';
 
 declare module '@paypal/checkout-server-sdk' {
   export namespace orders {

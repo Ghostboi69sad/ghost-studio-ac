@@ -23,7 +23,7 @@ export function useSubscriptionStatus(courseId?: string): SubscriptionStatus {
   const { user } = useAuth();
   const [status, setStatus] = useState<SubscriptionStatus>({
     hasSubscription: false,
-    isLoading: true
+    isLoading: true,
   });
 
   useEffect(() => {
@@ -31,7 +31,7 @@ export function useSubscriptionStatus(courseId?: string): SubscriptionStatus {
       if (!user) {
         setStatus({
           hasSubscription: false,
-          isLoading: false
+          isLoading: false,
         });
         return;
       }
@@ -40,11 +40,11 @@ export function useSubscriptionStatus(courseId?: string): SubscriptionStatus {
         const token = await user.getIdToken();
         const response = await fetch('/api/subscription/check-status', {
           method: 'POST',
-          headers: { 
+          headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
+            Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ courseId })
+          body: JSON.stringify({ courseId }),
         });
 
         if (!response.ok) {
@@ -57,14 +57,14 @@ export function useSubscriptionStatus(courseId?: string): SubscriptionStatus {
           isLoading: false,
           isSubscribed: data.isValid,
           subscriptionDetails: data.subscriptionDetails,
-          expiryDate: data.expiryDate
+          expiryDate: data.expiryDate,
         });
       } catch (error) {
         console.error('خطأ في التحقق من الاشتراك:', error);
         setStatus({
           hasSubscription: false,
           isLoading: false,
-          error: error instanceof Error ? error.message : 'حدث خطأ غير معروف'
+          error: error instanceof Error ? error.message : 'حدث خطأ غير معروف',
         });
         toast.error('فشل التحقق من حالة الاشتراك');
       }

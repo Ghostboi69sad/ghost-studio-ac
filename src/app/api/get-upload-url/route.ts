@@ -8,9 +8,9 @@ const s3Client = new S3Client({
   region: process.env.NEXT_PUBLIC_AWS_REGION || 'eu-north-1',
   credentials: {
     accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || ''
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
   },
-  forcePathStyle: true
+  forcePathStyle: true,
 });
 
 const BUCKET_NAME = process.env.NEXT_PUBLIC_S3_BUCKET || 'ghost-studio';
@@ -44,7 +44,7 @@ export async function POST(req: Request) {
     try {
       const uploadUrl = await getSignedUrl(s3Client, putObjectCommand, {
         expiresIn: 3600,
-        signableHeaders: new Set(['x-amz-server-side-encryption'])
+        signableHeaders: new Set(['x-amz-server-side-encryption']),
       });
 
       return NextResponse.json({

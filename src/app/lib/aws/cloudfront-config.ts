@@ -7,7 +7,7 @@ import { getSignedUrl } from '@aws-sdk/cloudfront-signer';
 const ORIGINS = {
   MAIN: 'ghost-studio.s3.eu-north-1.amazonaws.com',
   BACKUP: 'ghost-studio.s3.eu-north-1.amazonaws.com/backup',
-  PUBLIC: 'ghost-studio.s3.eu-north-1.amazonaws.com/public'
+  PUBLIC: 'ghost-studio.s3.eu-north-1.amazonaws.com/public',
 };
 
 const DISTRIBUTION_ID = 'E3DOMDR0FNW5ZV';
@@ -19,16 +19,19 @@ const cloudFront = new CloudFrontClient({
   credentials: {
     accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
-  }
+  },
 });
 
 /**
  * الحصول على رابط الوسائط مع دعم التخزين المؤقت والتوقيع
  */
-export async function getMediaUrl(key: string, options: {
-  useBackup?: boolean;
-  isPublic?: boolean;
-} = {}): Promise<string> {
+export async function getMediaUrl(
+  key: string,
+  options: {
+    useBackup?: boolean;
+    isPublic?: boolean;
+  } = {}
+): Promise<string> {
   try {
     // تحديد Origin المناسب
     let origin;
@@ -45,7 +48,7 @@ export async function getMediaUrl(key: string, options: {
       url,
       keyPairId: process.env.CLOUDFRONT_KEY_PAIR_ID!,
       privateKey: process.env.CLOUDFRONT_PRIVATE_KEY!,
-      dateLessThan: new Date(Date.now() + 3600 * 1000).toISOString()
+      dateLessThan: new Date(Date.now() + 3600 * 1000).toISOString(),
     });
 
     return signedUrl;
@@ -60,16 +63,18 @@ export async function getMediaUrl(key: string, options: {
  */
 export async function invalidateCache(paths: string[]) {
   try {
-    await cloudFront.send(new CreateInvalidationCommand({
-      DistributionId: DISTRIBUTION_ID,
-      InvalidationBatch: {
-        CallerReference: Date.now().toString(),
-        Paths: {
-          Quantity: paths.length,
-          Items: paths.map(path => path.startsWith('/') ? path : `/${path}`)
-        }
-      }
-    }));
+    await cloudFront.send(
+      new CreateInvalidationCommand({
+        DistributionId: DISTRIBUTION_ID,
+        InvalidationBatch: {
+          CallerReference: Date.now().toString(),
+          Paths: {
+            Quantity: paths.length,
+            Items: paths.map((path) => (path.startsWith('/') ? path : `/${path}`)),
+          },
+        },
+      })
+    );
   } catch (error) {
     console.error('Error invalidating cache:', error);
     throw new Error('Failed to invalidate cache');
@@ -77,5 +82,3 @@ export async function invalidateCache(paths: string[]) {
 }
 
 export default cloudFront;
-
-

@@ -19,7 +19,12 @@ interface CreateSessionRequest {
 
 export async function POST(request: Request) {
   try {
-    const { courseId, userId, amount, type = 'course' } = await request.json() as CreateSessionRequest;
+    const {
+      courseId,
+      userId,
+      amount,
+      type = 'course',
+    } = (await request.json()) as CreateSessionRequest;
 
     // التحقق من وجود الدورة
     const courseRef = ref(database, `courses/${courseId}`);
@@ -49,30 +54,30 @@ export async function POST(request: Request) {
       paymentMethod: 'paypal',
       createdAt: new Date().toISOString(),
       courseName: course.title,
-      courseType: course.accessType
+      courseType: course.accessType,
     });
 
     const orderRequest = new orders.OrdersCreateRequest();
-    orderRequest.prefer("return=representation");
+    orderRequest.prefer('return=representation');
     orderRequest.requestBody({
       intent: 'CAPTURE',
-      purchase_units: [{
-        amount: {
-          currency_code: 'USD',
-          value: amount.toString()
+      purchase_units: [
+        {
+          amount: {
+            currency_code: 'USD',
+            value: amount.toString(),
+          },
+          custom_id: `${transactionId}:${type}`,
+          description: isSubscription ? `اشتراك في: ${course.title}` : `شراء دورة: ${course.title}`,
         },
-        custom_id: `${transactionId}:${type}`,
-        description: isSubscription ? 
-          `اشتراك في: ${course.title}` : 
-          `شراء دورة: ${course.title}`
-      }],
+      ],
       application_context: {
         brand_name: 'Ghost Studio Academy',
         landing_page: 'LOGIN',
         user_action: 'PAY_NOW',
         return_url: `${process.env.NEXT_PUBLIC_APP_URL}/payment/success?transactionId=${transactionId}&courseId=${courseId}&type=${type}`,
-        cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/payment/failed?transactionId=${transactionId}`
-      }
+        cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/payment/failed?transactionId=${transactionId}`,
+      },
     });
 
     const response = await paypalClient.execute(orderRequest);
@@ -83,17 +88,16 @@ export async function POST(request: Request) {
     if (!approveLink?.href) {
       throw new Error('رابط الموافقة من PayPal غير موجود');
     }
-    
-    return NextResponse.json({ 
+
+    return NextResponse.json({
       orderId: response.result.id,
       approvalUrl: approveLink.href,
-      transactionId
+      transactionId,
     });
-
   } catch (error) {
     console.error('خطأ في إنشاء طلب PayPal:', error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'فشل في إنشاء طلب الدفع' }, 
+      { error: error instanceof Error ? error.message : 'فشل في إنشاء طلب الدفع' },
       { status: 500 }
     );
   }

@@ -1,4 +1,5 @@
 {
+  "root": true,
   "extends": [
     "next/core-web-vitals",
     "plugin:@typescript-eslint/recommended",
@@ -10,9 +11,12 @@
     "prettier"
   ],
   "parserOptions": {
-    "project": ["./tsconfig.json"],
+    "project": "./tsconfig.json",
     "ecmaVersion": 2020,
-    "sourceType": "module"
+    "sourceType": "module",
+    "ecmaFeatures": {
+      "jsx": true
+    }
   },
   "rules": {
     "prettier/prettier": ["error", {
@@ -27,34 +31,44 @@
       "jsxSingleQuote": true
     }],
     "react/no-unescaped-entities": "off",
-    "react-hooks/exhaustive-deps": "warn",
+    "react-hooks/exhaustive-deps": ["warn", {
+      "additionalHooks": "(useRecoilCallback|useRecoilTransaction_UNSTABLE)"
+    }],
     "@typescript-eslint/no-unused-vars": ["warn", {
       "argsIgnorePattern": "^_",
-      "varsIgnorePattern": "^_"
+      "varsIgnorePattern": "^_",
+      "ignoreRestSiblings": true
     }],
-    "@typescript-eslint/no-explicit-any": "warn",
+    "@typescript-eslint/no-explicit-any": "off",
     "@typescript-eslint/no-empty-interface": ["error", {
       "allowSingleExtends": true
     }],
-    "@typescript-eslint/ban-ts-comment": "warn"
+    "no-console": ["warn", { 
+      "allow": ["warn", "error"] 
+    }]
+  },
+  "settings": {
+    "react": {
+      "version": "detect"
+    },
+    "next": {
+      "rootDir": "."
+    }
+  },
+  "env": {
+    "browser": true,
+    "es6": true,
+    "node": true
   },
   "ignorePatterns": [
-    "**/*.d.ts",
-    "node_modules/**/*",
-    ".next/**/*",
+    "node_modules/",
+    ".next/",
+    "out/",
+    "build/",
+    "dist/",
     "*.config.js",
     "*.config.ts",
     "*.config.mjs",
-    "postcss.config.mjs",
-    "next.config.mjs",
-    "src/app/components/course-creator/types/**/*",
-    "src/app/components/course-listing/types/**/*",
-    "build/**/*",
-    "dist/**/*"
-  ],
-  "settings": {
-    "next": {
-      "rootDir": ["./"]
-    }
-  }
+    "*.d.ts"
+  ]
 }

@@ -22,11 +22,10 @@ export function initAdmin(): AdminServices {
         credential: cert({
           projectId: process.env.FIREBASE_PROJECT_ID,
           clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-          privateKey
+          privateKey,
         }),
-        databaseURL: process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL
+        databaseURL: process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL,
       });
-      
     } catch (error) {
       console.error('خطأ في تهيئة Firebase Admin:', error);
       throw error;
@@ -35,7 +34,7 @@ export function initAdmin(): AdminServices {
 
   return {
     auth: getAuth(),
-    db: getDatabase()
+    db: getDatabase(),
   };
 }
 

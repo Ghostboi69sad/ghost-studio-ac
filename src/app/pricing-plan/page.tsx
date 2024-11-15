@@ -62,9 +62,9 @@ export default function PricingPlan() {
         try {
           const response = await fetch('/api/subscription/check-status', {
             method: 'POST',
-            headers: { 
+            headers: {
               'Content-Type': 'application/json',
-              'Authorization': `Bearer ${await user.getIdToken()}`
+              Authorization: `Bearer ${await user.getIdToken()}`,
             },
             body: JSON.stringify({ userId: user.uid }),
           });
@@ -99,7 +99,7 @@ export default function PricingPlan() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${await user.getIdToken()}`
+          Authorization: `Bearer ${await user.getIdToken()}`,
         },
         body: JSON.stringify({
           planId: plan.paypalPlanId,
@@ -114,7 +114,7 @@ export default function PricingPlan() {
 
       const { orderId, links } = await response.json();
       const approvalLink = links.find((link: any) => link.rel === 'approve')?.href;
-      
+
       if (approvalLink) {
         window.location.href = approvalLink;
       } else {

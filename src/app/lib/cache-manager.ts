@@ -92,4 +92,4 @@ export class CacheManager {
   }
 }
 
-export const cacheManager = CacheManager.getInstance(); 
+export const cacheManager = CacheManager.getInstance();

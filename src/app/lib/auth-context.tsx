@@ -22,7 +22,7 @@ export interface AuthUser extends User {
     [courseId: string]: {
       purchaseDate: string;
       status: 'active' | 'expired';
-    }
+    };
   };
   hasPurchased?: (courseId: string) => boolean;
   getIdToken: () => Promise<string>;
@@ -85,7 +85,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             hasActiveSubscription: subscriptionData?.status === 'active',
             purchases: purchasesData || {},
             hasPurchased: (courseId: string) => purchasesData?.[courseId]?.status === 'active',
-            getIdToken: () => firebaseUser.getIdToken()
+            getIdToken: () => firebaseUser.getIdToken(),
           };
 
           setUser(authUser);

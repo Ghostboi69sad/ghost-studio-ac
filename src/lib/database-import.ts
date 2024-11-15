@@ -11,8 +11,8 @@ export async function importRealtimeDB(data: any, path: string): Promise<void> {
       body: JSON.stringify({
         action: 'restore',
         data: data,
-        path: path
-      })
+        path: path,
+      }),
     });
 
     if (!response.ok) {

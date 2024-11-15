@@ -24,7 +24,7 @@ import { useAuth } from '../../../lib/auth-context';
 import Image from 'next/image';
 import { Course, Lesson, Chapter, SubscriptionType } from '../types/course';
 import { loadStripe } from '@stripe/stripe-js';
-import { toast } from 'react-toastify';
+import { toast } from 'react-hot-toast';
 
 interface StripeProduct {
   id: string;
@@ -34,13 +34,13 @@ interface StripeProduct {
 
 const calculateVideoCount = (chapters: Chapter[] = []) => {
   if (!chapters || !Array.isArray(chapters)) return 0;
-  
+
   return chapters.reduce((acc, chapter) => {
     if (!chapter) return acc;
-    
-    const contentCount = chapter.content?.filter(item => item.type === 'video')?.length || 0;
+
+    const contentCount = chapter.content?.filter((item) => item.type === 'video')?.length || 0;
     const lessonsCount = chapter.lessons?.length || 0;
-    
+
     return acc + contentCount + lessonsCount;
   }, 0);
 };
@@ -193,15 +193,15 @@ export function CourseListingComponent() {
     try {
       const response = await fetch('/api/checkout/create-session', {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${await user.getIdToken()}`
+          Authorization: `Bearer ${await user.getIdToken()}`,
         },
         body: JSON.stringify({
           courseId: course.id,
           userId: user.uid,
           amount: course.price,
-          type: 'course'
+          type: 'course',
         }),
       });
 
@@ -242,7 +242,7 @@ export function CourseListingComponent() {
   const handleEditCourse = async (courseId: string, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
     if (!user) {
       router.push('/login');
       return;
@@ -251,14 +251,13 @@ export function CourseListingComponent() {
     try {
       const courseRef = ref(database, `courses/${courseId}`);
       const snapshot = await get(courseRef);
-      
+
       if (!snapshot.exists()) {
         toast.error('الدورة غير موجودة');
         return;
       }
 
       router.push(`/courses/${courseId}/edit`);
-      
     } catch (error) {
       console.error('خطأ في الوصول إلى الدورة:', error);
       toast.error('حدث خطأ في الوصول إلى الدورة');
@@ -483,8 +482,7 @@ export function CourseListingComponent() {
                   <div className='flex items-center'>
                     <span className='text-2xl font-bold text-purple-400'>${course.price}</span>
                     <span className='text-sm text-gray-400 ml-2'>
-                      /
-                      {calculateVideoCount(course.chapters)} Videos
+                      /{calculateVideoCount(course.chapters)} Videos
                     </span>
                   </div>
                 </CardFooter>
@@ -526,7 +524,8 @@ export function CourseListingComponent() {
                         <DialogHeader>
                           <DialogTitle>تأكيد الحذف</DialogTitle>
                           <DialogDescription>
-                            هل أنت متأكد من حذف "{courseToDelete?.title}"؟ لا يمكن التراجع عن هذا الإجراء.
+                            هل أنت متأكد من حذف "{courseToDelete?.title}"؟ لا يمكن التراجع عن هذا
+                            الإجراء.
                           </DialogDescription>
                         </DialogHeader>
                         <DialogFooter>

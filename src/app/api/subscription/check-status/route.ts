@@ -5,13 +5,16 @@ export async function POST(request: Request) {
   try {
     const { auth, db } = initAdmin();
     const token = request.headers.get('authorization')?.split('Bearer ')[1];
-    
+
     if (!token) {
-      return NextResponse.json({ 
-        error: 'No authorization token',
-        isValid: false,
-        courseAccess: false 
-      }, { status: 401 });
+      return NextResponse.json(
+        {
+          error: 'No authorization token',
+          isValid: false,
+          courseAccess: false,
+        },
+        { status: 401 }
+      );
     }
 
     const decodedToken = await auth.verifyIdToken(token);
@@ -26,7 +29,7 @@ export async function POST(request: Request) {
         isValid: true,
         courseAccess: true,
         subscriptionStatus: 'admin',
-        role: 'admin'
+        role: 'admin',
       });
     }
 
@@ -36,7 +39,7 @@ export async function POST(request: Request) {
       subscriptionStatus: '',
       expiryDate: '',
       subscriptionDetails: null as any,
-      role: 'user'
+      role: 'user',
     };
 
     const courseRef = db.ref(`courses/${courseId}`);
@@ -44,11 +47,14 @@ export async function POST(request: Request) {
     const courseData = courseSnapshot.val();
 
     if (!courseData) {
-      return NextResponse.json({ 
-        error: 'Course not found',
-        isValid: false,
-        courseAccess: false 
-      }, { status: 404 });
+      return NextResponse.json(
+        {
+          error: 'Course not found',
+          isValid: false,
+          courseAccess: false,
+        },
+        { status: 404 }
+      );
     }
 
     const purchaseRef = db.ref(`users/${userId}/purchases/${courseId}`);
@@ -59,7 +65,7 @@ export async function POST(request: Request) {
       return NextResponse.json({
         isValid: true,
         courseAccess: true,
-        subscriptionStatus: 'purchased'
+        subscriptionStatus: 'purchased',
       });
     }
 
@@ -67,7 +73,7 @@ export async function POST(request: Request) {
       return NextResponse.json({
         isValid: true,
         courseAccess: true,
-        subscriptionStatus: 'free'
+        subscriptionStatus: 'free',
       });
     }
 
@@ -79,17 +85,17 @@ export async function POST(request: Request) {
       try {
         const subscriptionStatus = subscriptionData.status;
         response.courseAccess = subscriptionStatus === 'active';
-        
+
         if (subscriptionStatus === 'active') {
           const currentPeriodEnd = new Date(subscriptionData.currentPeriodEnd);
           const now = new Date();
-          
+
           if (currentPeriodEnd > now) {
             response.subscriptionDetails = {
               planId: subscriptionData.planId,
               status: subscriptionStatus,
               currentPeriodEnd: subscriptionData.currentPeriodEnd,
-              subscriptionType: 'subscription'
+              subscriptionType: 'subscription',
             };
           } else {
             response.courseAccess = false;
@@ -104,13 +110,15 @@ export async function POST(request: Request) {
 
     response.isValid = response.courseAccess;
     return NextResponse.json(response);
-
   } catch (error) {
     console.error('Subscription check error:', error);
-    return NextResponse.json({
-      error: error instanceof Error ? error.message : 'Internal server error',
-      isValid: false,
-      courseAccess: false
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        error: error instanceof Error ? error.message : 'Internal server error',
+        isValid: false,
+        courseAccess: false,
+      },
+      { status: 500 }
+    );
   }
 }

@@ -34,4 +34,4 @@ export async function saveCourseToDatabase(course: Course, update: CourseUpdate)
 
   const courseRef = ref(database, `courses/${course.id}`);
   await firebaseUpdate(courseRef, metadata);
-} 
+}

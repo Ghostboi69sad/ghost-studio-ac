@@ -55,15 +55,15 @@ export const dynamic = 'force-dynamic';
 export async function GET(request: Request) {
   const headers = new Headers({
     'Content-Type': 'application/json',
-    'Access-Control-Allow-Origin': '*'
+    'Access-Control-Allow-Origin': '*',
   });
 
   try {
     const userId = request.headers.get('user-id');
     if (!userId) {
-      return new Response(JSON.stringify({ error: 'غير مصرح' }), { 
-        status: 401, 
-        headers 
+      return new Response(JSON.stringify({ error: 'غير مصرح' }), {
+        status: 401,
+        headers,
       });
     }
 
@@ -71,9 +71,9 @@ export async function GET(request: Request) {
     return new Response(JSON.stringify(courses), { headers });
   } catch (error) {
     console.error('خطأ في جلب الدورات:', error);
-    return new Response(JSON.stringify({ error: 'فشل في جلب البيانات' }), { 
-      status: 500, 
-      headers 
+    return new Response(JSON.stringify({ error: 'فشل في جلب البيانات' }), {
+      status: 500,
+      headers,
     });
   }
 }

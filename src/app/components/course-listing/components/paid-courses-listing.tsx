@@ -23,7 +23,7 @@ import { ref, onValue, push, remove, update, set, get } from 'firebase/database'
 import { useAuth } from '../../../lib/auth-context';
 import Image from 'next/image';
 import { Course } from '../types/course';
-import { toast } from 'react-toastify';
+import { toast } from 'react-hot-toast';
 
 export function PaidCoursesListing() {
   const [courses, setCourses] = useState<Course[]>([]);
@@ -68,7 +68,7 @@ export function PaidCoursesListing() {
       setLoading(false);
     }
   }, [user]);
-  
+
   const fetchPaidCourses = async () => {
     try {
       if (!user) {
@@ -80,13 +80,13 @@ export function PaidCoursesListing() {
 
       const token = await user.getIdToken();
       console.log('تم الحصول على التوكن');
-      
+
       const response = await fetch('/api/courses/paid', {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
       });
 
       console.log('استجابة الخادم:', response.status, response.statusText);
@@ -116,13 +116,13 @@ export function PaidCoursesListing() {
 
   const fetchPurchasedCourses = async () => {
     if (!user) return;
-    
+
     try {
       const promises = courses.map(async (course) => {
         const purchased = await checkPurchaseStatus(course.id);
         return [course.id, purchased];
       });
-      
+
       const results = await Promise.all(promises);
       const purchasedMap = Object.fromEntries(results);
       setPurchasedCourses(purchasedMap);
@@ -140,14 +140,14 @@ export function PaidCoursesListing() {
     try {
       const response = await fetch('/api/checkout/create-session', {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${await user.getIdToken()}`
+          Authorization: `Bearer ${await user.getIdToken()}`,
         },
         body: JSON.stringify({
           courseId: course.id,
           userId: user.uid,
-          amount: course.price
+          amount: course.price,
         }),
       });
 
@@ -167,11 +167,11 @@ export function PaidCoursesListing() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${await user?.getIdToken()}`
+          Authorization: `Bearer ${await user?.getIdToken()}`,
         },
-        body: JSON.stringify({ courseId })
+        body: JSON.stringify({ courseId }),
       });
-      
+
       const { purchased } = await response.json();
       return purchased;
     } catch (error) {
@@ -184,7 +184,7 @@ export function PaidCoursesListing() {
   const filteredCourses = courses.filter((course) =>
     course.title?.toLowerCase().includes(searchTerm.toLowerCase())
   );
-  
+
   const totalPages = Math.ceil(filteredCourses.length / coursesPerPage);
   const indexOfLastCourse = currentPage * coursesPerPage;
   const indexOfFirstCourse = indexOfLastCourse - coursesPerPage;
@@ -282,7 +282,7 @@ export function PaidCoursesListing() {
 
   return (
     <div className='min-h-screen bg-black'>
-      <div 
+      <div
         className='container mx-auto px-6 py-8'
         style={{
           backgroundImage: `linear-gradient(to right, #1f2937 1px, transparent 1px),
@@ -342,7 +342,9 @@ export function PaidCoursesListing() {
                       id='price'
                       type='number'
                       value={newCourse.price}
-                      onChange={(e) => setNewCourse({ ...newCourse, price: Number(e.target.value) })}
+                      onChange={(e) =>
+                        setNewCourse({ ...newCourse, price: Number(e.target.value) })
+                      }
                       className='col-span-3'
                     />
                   </div>
@@ -384,25 +386,25 @@ export function PaidCoursesListing() {
               <CardFooter className='flex justify-between'>
                 {user ? (
                   <>
-                    <Button 
+                    <Button
                       onClick={() => router.push(`/courses/${course.id}/edit`)}
-                      className="bg-purple-600 hover:bg-purple-700 text-white"
+                      className='bg-purple-600 hover:bg-purple-700 text-white'
                     >
                       View Course Details
                     </Button>
                     {!purchasedCourses[course.id] && (
-                      <Button 
+                      <Button
                         onClick={() => handlePurchaseCourse(course)}
-                        className="bg-amber-400 hover:bg-amber-500 text-black"
+                        className='bg-amber-400 hover:bg-amber-500 text-black'
                       >
                         Purchase Course
                       </Button>
                     )}
                   </>
                 ) : (
-                  <Button 
+                  <Button
                     onClick={() => router.push('/login')}
-                    className="bg-gray-600 hover:bg-gray-700 text-white"
+                    className='bg-gray-600 hover:bg-gray-700 text-white'
                   >
                     Login to Purchase
                   </Button>
@@ -414,7 +416,7 @@ export function PaidCoursesListing() {
 
         <div className='flex justify-center mt-8 gap-4'>
           <Button
-            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
             disabled={currentPage === 1}
           >
             Previous
@@ -423,7 +425,7 @@ export function PaidCoursesListing() {
             Page {currentPage} of {totalPages}
           </span>
           <Button
-            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+            onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
             disabled={currentPage === totalPages}
           >
             Next

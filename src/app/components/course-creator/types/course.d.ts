@@ -7,7 +7,7 @@ export interface ContentItem {
   type: 'video' | 'file';
   name: string;
   url: string;
-   locked?: boolean;
+  locked?: boolean;
 }
 
 export interface Lesson {

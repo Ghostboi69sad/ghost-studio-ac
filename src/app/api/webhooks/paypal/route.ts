@@ -10,7 +10,7 @@ export async function POST(request: Request) {
 
     if (eventType === 'PAYMENT.CAPTURE.COMPLETED') {
       const [transactionId, type] = payload.resource.custom_id.split(':');
-      
+
       // جلب معلومات المعاملة
       const transactionRef = ref(database, `transactions/${transactionId}`);
       const transactionSnapshot = await get(transactionRef);
@@ -30,7 +30,7 @@ export async function POST(request: Request) {
           startDate: new Date().toISOString(),
           endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days
           type: 'premium',
-          paymentId: transactionId
+          paymentId: transactionId,
         });
       } else {
         // تحديث شراء الدورة
@@ -39,14 +39,14 @@ export async function POST(request: Request) {
           purchasedAt: new Date().toISOString(),
           amount: payload.resource.amount.value,
           paymentMethod: 'paypal',
-          transactionId
+          transactionId,
         });
       }
 
       // تحديث حالة المعاملة
       await update(transactionRef, {
         status: 'completed',
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
       });
     }
 
@@ -55,4 +55,4 @@ export async function POST(request: Request) {
     console.error('PayPal webhook error:', error);
     return NextResponse.json({ error: 'Webhook processing failed' }, { status: 500 });
   }
-} 
+}

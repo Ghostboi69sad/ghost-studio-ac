@@ -55,7 +55,7 @@ export default function EditCoursePage() {
     };
 
     checkAuth();
-    
+
     return () => {
       if (unsubscribe) {
         unsubscribe();
@@ -66,7 +66,7 @@ export default function EditCoursePage() {
   const handleCourseUpdate = async (updatedCourse: Course) => {
     try {
       setIsLoading(true);
-      
+
       if (!user || !isAdminUser(user)) {
         toast.error('لا تملك الصلاحيات الكافية');
         return;
@@ -77,9 +77,9 @@ export default function EditCoursePage() {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(updatedCourse)
+        body: JSON.stringify(updatedCourse),
       });
 
       if (!response.ok) {
@@ -98,22 +98,19 @@ export default function EditCoursePage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-900 to-indigo-800">
-        <Loader2 className="w-8 h-8 animate-spin text-white" />
+      <div className='min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-900 to-indigo-800'>
+        <Loader2 className='w-8 h-8 animate-spin text-white' />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 to-indigo-800">
+    <div className='min-h-screen bg-gradient-to-br from-purple-900 to-indigo-800'>
       {course ? (
-        <DomestikaCourseCreator
-          initialCourse={course}
-          onSave={handleCourseUpdate}
-        />
+        <DomestikaCourseCreator initialCourse={course} onSave={handleCourseUpdate} />
       ) : (
-        <div className="flex items-center justify-center h-full">
-          <div className="text-xl text-white">الدورة غير موجودة</div>
+        <div className='flex items-center justify-center h-full'>
+          <div className='text-xl text-white'>الدورة غير موجودة</div>
         </div>
       )}
     </div>

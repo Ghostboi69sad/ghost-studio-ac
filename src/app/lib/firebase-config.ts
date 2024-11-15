@@ -20,8 +20,8 @@ export const adminConfig = {
 export const netlifyConfig = {
   ...firebaseConfig,
   credential: {
-    ...adminConfig.credential
-  }
+    ...adminConfig.credential,
+  },
 };
 
-export default firebaseConfig; 
+export default firebaseConfig;

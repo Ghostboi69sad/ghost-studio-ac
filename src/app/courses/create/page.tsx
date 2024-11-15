@@ -30,13 +30,15 @@ export default function CreateCoursePage() {
     enrolledStudents: 0,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
-    chapters: [{
-      id: uuidv4(),
-      title: 'Chapter 1',
-      order: 1,
-      content: [],
-      lessons: []
-    }]
+    chapters: [
+      {
+        id: uuidv4(),
+        title: 'Chapter 1',
+        order: 1,
+        content: [],
+        lessons: [],
+      },
+    ],
   };
 
   const handleSave = async (course: Course): Promise<void> => {
@@ -46,7 +48,7 @@ export default function CreateCoursePage() {
         isPublic: course.isPublic,
         chapters: course.chapters,
         updatedAt: new Date().toISOString(),
-        updatedBy: user?.uid || ''
+        updatedBy: user?.uid || '',
       });
       toast.success('تم إنشاء الدورة بنجاح');
       router.push(`/courses/${course.id}`);
@@ -68,11 +70,7 @@ export default function CreateCoursePage() {
   return (
     <div className='min-h-screen bg-gradient-to-br from-purple-900 to-indigo-800'>
       <div className='container mx-auto p-8'>
-        <CourseCreator2 
-          initialCourse={initialCourse}
-          onSave={handleSave}
-          readOnly={false}
-        />
+        <CourseCreator2 initialCourse={initialCourse} onSave={handleSave} readOnly={false} />
       </div>
     </div>
   );

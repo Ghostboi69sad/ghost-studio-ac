@@ -8,7 +8,7 @@ export async function exportRealtimeDB(path: string = '/', filename: string = 'b
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ action: 'backup' })
+      body: JSON.stringify({ action: 'backup' }),
     });
 
     if (!response.ok) {
