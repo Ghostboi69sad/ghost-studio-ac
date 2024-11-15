@@ -22,9 +22,9 @@ export default function ForgotPasswordPage() {
     try {
       await sendPasswordResetEmail(auth, email);
       toast.success('تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني');
-      window.location.href = '/login';
+      router.push('/login');
     } catch (error: any) {
-      console.error('Error sending reset email:', error);
+      console.error('خطأ في إرسال البريد:', error);
       toast.error(error.message || 'فشل في إرسال رابط إعادة تعيين كلمة المرور');
     } finally {
       setIsLoading(false);
@@ -58,12 +58,12 @@ export default function ForgotPasswordPage() {
           >
             {isLoading ? 'جاري الإرسال...' : 'إرسال رابط إعادة التعيين'}
           </Button>
+          <div className='text-center mt-4'>
+            <Link href='/login' className='text-sm text-purple-600 hover:text-purple-800'>
+              العودة إلى تسجيل الدخول
+            </Link>
+          </div>
         </form>
-        <div className='text-center mt-4'>
-          <Link href='/login' className='text-sm text-purple-600 hover:text-purple-800'>
-            العودة إلى تسجيل الدخول
-          </Link>
-        </div>
       </div>
     </div>
   );

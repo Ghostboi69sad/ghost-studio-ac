@@ -18,7 +18,6 @@
       "@/*": ["./src/*"],
       "@/components/*": ["src/app/components/*"],
       "@/lib/*": ["src/app/lib/*"],
-      "@paypal/checkout-server-sdk": ["./src/types/paypal.d.ts"],
       "@/types/*": ["src/types/*"]
     },
     "typeRoots": [
@@ -28,12 +27,8 @@
     "types": [
       "node",
       "react-hot-toast",
-      "react-toastify"
-    ],
-    "plugins": [
-      {
-        "name": "next"
-      }
+      "react-toastify",
+      "@paypal/checkout-server-sdk"
     ]
   },
   "include": [

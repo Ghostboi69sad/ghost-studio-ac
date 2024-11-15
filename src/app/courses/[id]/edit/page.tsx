@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { database } from '../../../../lib/firebase';
+import { database, auth } from '../../../../lib/firebase';
 import { ref, onValue } from 'firebase/database';
 import { useAuth } from '../../../lib/auth-context';
 import { isAdminUser } from '../../../lib/auth-helpers';
@@ -20,48 +20,42 @@ export default function EditCoursePage() {
   const id = params?.id as string;
 
   useEffect(() => {
-    let unsubscribe: (() => void) | undefined;
-
     const checkAuth = async () => {
       try {
-        if (!user) {
-          toast.error('يجب تسجيل الدخول أولاً');
-          router.replace('/login');
+        const currentUser = auth.currentUser;
+        if (!currentUser) {
+          router.push('/login');
           return;
         }
 
-        if (!isAdminUser(user)) {
+        if (!isAdminUser(currentUser)) {
           toast.error('لا تملك الصلاحيات الكافية');
-          router.replace('/courses');
+          router.push('/courses');
           return;
         }
 
         const courseRef = ref(database, `courses/${id}`);
-        unsubscribe = onValue(courseRef, (snapshot) => {
+        const unsubscribe = onValue(courseRef, (snapshot) => {
           setIsLoading(false);
           if (snapshot.exists()) {
             const data = snapshot.val();
             setCourse({ id: snapshot.key as string, ...data });
           } else {
             toast.error('الدورة غير موجودة');
-            router.replace('/courses');
+            router.push('/courses');
           }
         });
+
+        return () => unsubscribe();
       } catch (error) {
         console.error('خطأ في التحقق من المستخدم:', error);
         toast.error('حدث خطأ ما');
-        router.replace('/courses');
+        router.push('/courses');
       }
     };
 
     checkAuth();
-
-    return () => {
-      if (unsubscribe) {
-        unsubscribe();
-      }
-    };
-  }, [id, user, router]);
+  }, [id, router]);
 
   const handleCourseUpdate = async (updatedCourse: Course) => {
     try {
