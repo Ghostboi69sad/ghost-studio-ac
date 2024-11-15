@@ -18,6 +18,7 @@
       "@/*": ["./src/*"],
       "@/components/*": ["src/app/components/*"],
       "@/lib/*": ["src/app/lib/*"],
+      "@paypal/checkout-server-sdk": ["./src/types/paypal.d.ts"],
       "@/types/*": ["src/types/*"]
     },
     "typeRoots": [
@@ -44,6 +45,7 @@
     ".next/types/**/*.ts",
     "src/app/components/**/*.ts",
     "src/app/components/**/*.tsx",
+    "src/types/*.d.ts",
     "src/app/api/**/*.ts"
   ],
   "exclude": [

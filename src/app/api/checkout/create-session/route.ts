@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { paypalClient } from '../../../../lib/paypal-config';
-import { orders } from '@paypal/checkout-server-sdk';
+import paypal from '@paypal/checkout-server-sdk';
+const { orders } = paypal;
 import { database } from '../../../lib/firebase';
 import { ref, set, get } from 'firebase/database';
 
@@ -80,7 +81,7 @@ export async function POST(request: Request) {
       },
     });
 
-    const response = await paypalClient.execute(orderRequest);
+    const response = await paypalClient.execute<paypal.PayPalOrderResponse>(orderRequest);
     const approveLink = (response.result.links as PayPalLink[]).find(
       (link: PayPalLink) => link.rel === 'approve'
     );
