@@ -1,11 +1,17 @@
-import type { Metadata } from 'next';
+/* eslint-disable import/order */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable no-console */
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import { Metadata } from 'next';
 import localFont from 'next/font/local';
-import './globals.css';
-import { AuthProvider } from './lib/auth-context';
-import ToastProvider from '../components/providers/toast-provider';
+import React from 'react';
 import { Toaster } from 'react-hot-toast';
 import { ToastContainer } from 'react-toastify';
+
+import { AuthProvider } from './lib/auth-context';
+import ToastProvider from '../components/providers/toast-provider';
 import 'react-toastify/dist/ReactToastify.css';
+import './globals.css';
 
 const geistSans = localFont({
   src: './fonts/GeistVF.woff',

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { auth, database } from './firebase';
+
 import {
   User,
   onAuthStateChanged,
@@ -13,6 +13,8 @@ import {
   UserCredential,
 } from 'firebase/auth';
 import { ref, get, set, onValue, getDatabase } from 'firebase/database';
+
+import { auth, database } from './firebase';
 import { backupDatabase, restoreDatabase } from '../../scripts/backup';
 
 export interface AuthUser extends User {
@@ -62,7 +64,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const auth = getAuth();
     const database = getDatabase();
 
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async firebaseUser => {
       if (firebaseUser) {
         const userRef = ref(database, `users/${firebaseUser.uid}`);
         const subscriptionRef = ref(database, `subscriptions/${firebaseUser.uid}`);

@@ -1,15 +1,17 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { database, auth } from '../../../../lib/firebase';
+
 import { ref, onValue } from 'firebase/database';
-import { useAuth } from '../../../lib/auth-context';
-import { isAdminUser } from '../../../lib/auth-helpers';
+import { Loader2 } from 'lucide-react';
+import { useParams, useRouter } from 'next/navigation';
+import { toast } from 'react-hot-toast';
+
+import { database, auth } from '../../../../lib/firebase';
 import DomestikaCourseCreator from '../../../components/course-creator/components/domestika-creator';
 import { Course } from '../../../components/course-creator/types/course';
-import { toast } from 'react-hot-toast';
-import { Loader2 } from 'lucide-react';
+import { useAuth } from '../../../lib/auth-context';
+import { isAdminUser } from '../../../lib/auth-helpers';
 
 export default function EditCoursePage() {
   const [course, setCourse] = useState<Course | null>(null);
@@ -35,7 +37,7 @@ export default function EditCoursePage() {
         }
 
         const courseRef = ref(database, `courses/${id}`);
-        const unsubscribe = onValue(courseRef, (snapshot) => {
+        const unsubscribe = onValue(courseRef, snapshot => {
           setIsLoading(false);
           if (snapshot.exists()) {
             const data = snapshot.val();

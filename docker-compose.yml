@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  ghost-studio:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env.production
+    restart: unless-stopped
+    networks:
+      - app-network
+
+  n8n:
+    image: n8nio/n8n:1.90.2
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_HOST=n8ntest.ghoststudioacademy.store
+      - N8N_PROTOCOL=https
+      - N8N_RUNNERS_ENABLED=true
+      - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=true
+      - N8N_PORT=5678
+    volumes:
+      - n8n_data:/home/node/.n8n
+    restart: unless-stopped
+    networks:
+      - app-network
+
+  cloudflared-gsa:
+    image: cloudflare/cloudflared:latest
+    command: tunnel run
+    environment:
+      - TUNNEL_TOKEN=${CLOUDFLARE_GSA_TUNNEL_TOKEN}
+    volumes:
+      - ./cloudflared/gsa:/etc/cloudflared:ro
+    restart: unless-stopped
+    networks:
+      - app-network
+    depends_on:
+      - ghost-studio
+
+  cloudflared-n8n:
+    image: cloudflare/cloudflared:latest
+    command: tunnel run
+    environment:
+      - TUNNEL_TOKEN=${CLOUDFLARE_N8N_TUNNEL_TOKEN}
+    volumes:
+      - ./cloudflared/n8n:/etc/cloudflared:ro
+    restart: unless-stopped
+    networks:
+      - app-network
+    depends_on:
+      - n8n
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  n8n_data:
+    driver: local

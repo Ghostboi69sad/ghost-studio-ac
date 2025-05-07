@@ -1,7 +1,9 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
-import { database } from '../../../lib/firebase';
 import { ref, get } from 'firebase/database';
+import { NextResponse } from 'next/server';
+
+import { database } from '../../../lib/firebase';
+
+import type { NextRequest } from 'next/server';
 
 // تعريف نوع Course
 interface Course {
@@ -36,7 +38,7 @@ async function fetchCourses(userId: string): Promise<Course[]> {
   }
 
   const courses: Course[] = [];
-  snapshot.forEach((childSnapshot) => {
+  snapshot.forEach(childSnapshot => {
     const course = {
       id: childSnapshot.key,
       ...childSnapshot.val(),

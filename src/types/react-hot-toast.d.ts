@@ -35,7 +35,7 @@ declare module 'react-hot-toast' {
   }
 
   export const Toaster: React.FC<ToasterProps>;
-  
+
   export const toast: {
     (message: string, options?: Partial<Toast>): string;
     success: (message: string, options?: Partial<Toast>) => string;
@@ -47,4 +47,4 @@ declare module 'react-hot-toast' {
   };
 
   export default toast;
-} 
+}

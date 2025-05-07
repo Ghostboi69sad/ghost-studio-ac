@@ -1,6 +1,7 @@
-import { SubscriptionPlan } from '../../types/payment';
-import { toast } from 'react-hot-toast';
 import { User } from 'firebase/auth';
+import { toast } from 'react-hot-toast';
+
+import { SubscriptionPlan } from '../../types/payment';
 
 export async function checkSubscriptionStatus(
   userId: string,

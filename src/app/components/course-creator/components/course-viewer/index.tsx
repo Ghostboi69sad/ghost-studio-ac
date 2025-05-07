@@ -1,14 +1,16 @@
 'use client';
 
 import { useState } from 'react';
+
+import { ChevronRight, Video, File, Lock } from 'lucide-react';
+import { toast } from 'react-hot-toast';
+
+import { VideoService } from '../../../../lib/video-service';
+import { Button } from '../../components/ui/ui/button';
 import { Card } from '../../components/ui/ui/card';
 import { ScrollArea } from '../../components/ui/ui/scroll-area';
-import { VideoPlayer } from '../video-player/index';
 import { Course, ContentItem } from '../../types/course';
-import { Button } from '../../components/ui/ui/button';
-import { ChevronRight, Video, File, Lock } from 'lucide-react';
-import { VideoService } from '../../../../lib/video-service';
-import { toast } from 'react-hot-toast';
+import { VideoPlayer } from '../video-player/index';
 
 interface CourseViewerProps {
   course: Course;

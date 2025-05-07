@@ -1,6 +1,7 @@
-import { NextResponse } from 'next/server';
-import { database } from '@/lib/firebase';
 import { ref, set } from 'firebase/database';
+import { NextResponse } from 'next/server';
+
+import { database } from '@/lib/firebase';
 
 export async function POST(request: Request) {
   const { userId, courseId, lessonId, progress } = await request.json();

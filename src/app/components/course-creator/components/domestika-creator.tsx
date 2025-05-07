@@ -1,27 +1,36 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable import/order */
+/* eslint-disable no-console */
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable import/no-duplicates */
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { ThemeProvider, useTheme } from 'next-themes';
 import { useRouter, useSearchParams, useParams } from 'next/navigation';
-import { auth, db, database } from '../../../lib/firebase';
-import { ref, set, push, get, update, serverTimestamp } from 'firebase/database';
+
+import { ref, update } from 'firebase/database';
 import {
   Plus,
   Trash2,
   File,
-  Video,
   Play,
-  Pause,
-  SkipBack,
-  SkipForward,
-  Volume2,
-  VolumeX,
+  Loader2,
 } from 'lucide-react';
-import { Button } from './ui/ui/button';
-import { Input } from './ui/ui/input';
-import { Label } from './ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/ui/card';
+
+import { uploadToS3, getPresignedUploadUrl } from '../../../../lib/aws-config';
+import { toast } from '../../../../lib/toast';
+import { useAuth } from '../../../lib/auth-context';
+import { cacheManager } from '../../../lib/cache-manager';
+import { database } from '../../../lib/firebase';
+import { getMediaUrl } from '../lib/aws/cloudfront-config';
+import { handleSubscriptionAccess } from '../lib/subscription-handlers/subscription-service';
+import { saveCourseToDatabase } from '../lib/course-operations';
+import { useSubscriptionStatus } from '../hooks/use-subscription';
+
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
-import { Slider } from './ui/ui/slider';
+import { Button } from './ui/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -30,22 +39,12 @@ import {
   DialogTrigger,
   DialogDescription,
 } from './ui/ui/dialog';
-import { cn } from '../lib/utils';
-import { toast } from '../../../../lib/toast';
-// Import types from course.d.ts
-import type { Course, Chapter, ContentItem, AccessType, CourseUpdate } from '../types/course';
-import { useAuth } from '../../../lib/auth-context';
-import { ThemeProvider, useTheme } from 'next-themes';
-import { Moon, Sun } from 'lucide-react';
-import { getMediaUrl } from '../lib/aws/cloudfront-config';
-import { DomestikaCourseCreatorProps } from '../types/course';
-import { uploadToS3, getPresignedUploadUrl } from '../../../../lib/aws-config';
-import { Loader2 } from 'lucide-react';
-import { saveCourseToDatabase } from '../lib/course-operations';
-import { handleSubscriptionAccess } from '../lib/subscription-handlers/subscription-service';
-import { useSubscriptionStatus } from '../hooks/use-subscription';
+import { Input } from './ui/ui/input';
+import { Label } from './ui/label';
 import EnhancedVideoPlayer from './EnhancedVideoPlayer';
-import { cacheManager } from '../../../lib/cache-manager';
+
+import type { Course, Chapter, ContentItem, AccessType, CourseUpdate } from '../types/course';
+import type { DomestikaCourseCreatorProps } from '../types/course';
 
 const DomestikaCourseCreator: React.FC<DomestikaCourseCreatorProps> = ({
   initialCourse,
@@ -166,7 +165,7 @@ const DomestikaCourseCreator: React.FC<DomestikaCourseCreatorProps> = ({
       lessons: [],
     };
 
-    setCourse((prev) => ({
+    setCourse(prev => ({
       ...prev,
       chapters: [...(prev.chapters || []), newChapter],
     }));
@@ -186,12 +185,12 @@ const DomestikaCourseCreator: React.FC<DomestikaCourseCreatorProps> = ({
       url: newContentUrl,
     };
 
-    setCourse((prev) => {
+    setCourse(prev => {
       const newChapters = [...prev.chapters];
       if (!newChapters[activeChapterIndex].content) {
         newChapters[activeChapterIndex].content = [];
       }
-      if (!newChapters[activeChapterIndex].content.some((item) => item.url === newContentUrl)) {
+      if (!newChapters[activeChapterIndex].content.some(item => item.url === newContentUrl)) {
         newChapters[activeChapterIndex].content.push(newContent);
         return {
           ...prev,
@@ -217,7 +216,7 @@ const DomestikaCourseCreator: React.FC<DomestikaCourseCreatorProps> = ({
       return;
     }
 
-    setCourse((prev) => {
+    setCourse(prev => {
       const newChapters = [...prev.chapters];
       const chapter = newChapters[chapterIndex];
 
@@ -373,7 +372,7 @@ const DomestikaCourseCreator: React.FC<DomestikaCourseCreatorProps> = ({
         accessType: accessType,
         isPublic: isPublic,
         chapters:
-          course.chapters?.map((chapter) => ({
+          course.chapters?.map(chapter => ({
             id: chapter.id,
             title: chapter.title,
             content: chapter.content || [],
@@ -383,7 +382,7 @@ const DomestikaCourseCreator: React.FC<DomestikaCourseCreatorProps> = ({
         videoCount:
           course.chapters?.reduce(
             (acc, chapter) =>
-              acc + (chapter.content?.filter((item) => item.type === 'video')?.length || 0),
+              acc + (chapter.content?.filter(item => item.type === 'video')?.length || 0),
             0
           ) || 0,
         updatedAt: new Date().toISOString(),
@@ -522,7 +521,7 @@ const DomestikaCourseCreator: React.FC<DomestikaCourseCreatorProps> = ({
                 <Input
                   id='course-title'
                   value={course.title}
-                  onChange={(e) => setCourse((prev) => ({ ...prev, title: e.target.value }))}
+                  onChange={e => setCourse(prev => ({ ...prev, title: e.target.value }))}
                   className='bg-gray-800 text-white'
                 />
               </div>
@@ -534,7 +533,7 @@ const DomestikaCourseCreator: React.FC<DomestikaCourseCreatorProps> = ({
                   name='access-type'
                   aria-label='اختر نوع الوصول للدورة'
                   value={accessType}
-                  onChange={(e) => handleAccessTypeUpdate(e.target.value as AccessType)}
+                  onChange={e => handleAccessTypeUpdate(e.target.value as AccessType)}
                   className='w-full bg-gray-800 text-white p-2 rounded'
                 >
                   <option value='free'>مجاني</option>
@@ -566,10 +565,10 @@ const DomestikaCourseCreator: React.FC<DomestikaCourseCreatorProps> = ({
                           {isAdmin ? (
                             <Input
                               value={chapter.title}
-                              onChange={(e) => {
+                              onChange={e => {
                                 const newChapters = [...course.chapters];
                                 newChapters[chapterIndex].title = e.target.value;
-                                setCourse((prev) => ({ ...prev, chapters: newChapters }));
+                                setCourse(prev => ({ ...prev, chapters: newChapters }));
                               }}
                               placeholder='Chapter title'
                               className='bg-gray-700 border-gray-600 text-gray-100'
@@ -606,7 +605,7 @@ const DomestikaCourseCreator: React.FC<DomestikaCourseCreatorProps> = ({
                                     <select
                                       id='content-type'
                                       value={newContentType}
-                                      onChange={(e) =>
+                                      onChange={e =>
                                         setNewContentType(e.target.value as 'video' | 'file')
                                       }
                                       className='col-span-3 bg-gray-700 border-gray-600 text-gray-100 rounded-md'
@@ -624,7 +623,7 @@ const DomestikaCourseCreator: React.FC<DomestikaCourseCreatorProps> = ({
                                     <Input
                                       id='content-name'
                                       value={newContentName}
-                                      onChange={(e) => setNewContentName(e.target.value)}
+                                      onChange={e => setNewContentName(e.target.value)}
                                       className='col-span-3 bg-gray-700 border-gray-600 text-gray-100'
                                     />
                                   </div>
@@ -637,7 +636,7 @@ const DomestikaCourseCreator: React.FC<DomestikaCourseCreatorProps> = ({
                                       id='file-upload'
                                       type='file'
                                       accept={newContentType === 'video' ? 'video/*' : '*/*'}
-                                      onChange={(e) => {
+                                      onChange={e => {
                                         const file = e.target.files?.[0];
                                         if (file) {
                                           handleFileUpload(file);
@@ -706,7 +705,7 @@ const DomestikaCourseCreator: React.FC<DomestikaCourseCreatorProps> = ({
                                 <Button
                                   variant='destructive'
                                   size='icon'
-                                  onClick={(e) => {
+                                  onClick={e => {
                                     e.preventDefault();
                                     e.stopPropagation();
                                     removeContent(chapterIndex, contentIndex);
@@ -735,7 +734,7 @@ const DomestikaCourseCreator: React.FC<DomestikaCourseCreatorProps> = ({
             <EnhancedVideoPlayer
               src={activeVideo}
               thumbnailUrl={course.thumbnail}
-              onProgress={(progress) => {
+              onProgress={progress => {
                 console.log(`Video progress: ${progress}%`);
                 updateProgress(progress);
               }}

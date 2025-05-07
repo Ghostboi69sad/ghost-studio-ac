@@ -1,13 +1,15 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+
+import { Loader2, CreditCard, Edit } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '../lib/auth-context';
+
+import { Course } from '../components/course-creator/types/course';
 import { CourseListingComponent } from '../components/course-listing/components/course-listing';
 import { PaidCoursesListing } from '../components/course-listing/components/paid-courses-listing';
-import { Loader2, CreditCard, Edit } from 'lucide-react';
-import { Course } from '../components/course-creator/types/course';
 import { Button } from '../components/course-listing/components/ui/button';
+import { useAuth } from '../lib/auth-context';
 
 export default function CoursesPage() {
   const { user } = useAuth();

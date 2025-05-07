@@ -1,5 +1,7 @@
 import React from 'react';
+
 import { Play, Pause, Volume2, VolumeX } from 'lucide-react';
+
 import { Button } from '../ui/button';
 import { Slider } from '../ui/ui/slider';
 

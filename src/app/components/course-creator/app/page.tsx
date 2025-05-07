@@ -1,7 +1,8 @@
 'use client';
 
-import CourseCreation2 from '../components/course-creation2';
 import { v4 as uuidv4 } from 'uuid';
+
+import CourseCreation2 from '../components/course-creation2';
 import { Course } from '../types/course';
 
 export default function Page() {

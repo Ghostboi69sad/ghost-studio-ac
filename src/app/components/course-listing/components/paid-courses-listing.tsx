@@ -1,9 +1,17 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+
+import { ref, onValue, push, remove, update, set, get } from 'firebase/database';
+import { Star, ChevronLeft, ChevronRight, Trash2, Edit, User, Clock, BookOpen } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
-import { Input } from './ui/input';
+import { useRouter } from 'next/navigation';
+import { toast } from 'react-hot-toast';
+
+import { useAuth } from '../../../lib/auth-context';
+import { database } from '../lib/firebase';
+import { Course } from '../types/course';
 import { Button } from './ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from './ui/card';
 import {
@@ -15,15 +23,9 @@ import {
   DialogFooter,
   DialogDescription,
 } from './ui/dialog';
+import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { Star, ChevronLeft, ChevronRight, Trash2, Edit, User, Clock, BookOpen } from 'lucide-react';
-import { database } from '../lib/firebase';
-import { ref, onValue, push, remove, update, set, get } from 'firebase/database';
-import { useAuth } from '../../../lib/auth-context';
-import Image from 'next/image';
-import { Course } from '../types/course';
-import { toast } from 'react-hot-toast';
 
 export function PaidCoursesListing() {
   const [courses, setCourses] = useState<Course[]>([]);
@@ -118,7 +120,7 @@ export function PaidCoursesListing() {
     if (!user) return;
 
     try {
-      const promises = courses.map(async (course) => {
+      const promises = courses.map(async course => {
         const purchased = await checkPurchaseStatus(course.id);
         return [course.id, purchased];
       });
@@ -181,7 +183,7 @@ export function PaidCoursesListing() {
   };
 
   const coursesPerPage = 15;
-  const filteredCourses = courses.filter((course) =>
+  const filteredCourses = courses.filter(course =>
     course.title?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -300,7 +302,7 @@ export function PaidCoursesListing() {
             type='text'
             placeholder='Search courses'
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={e => setSearchTerm(e.target.value)}
             className='w-full bg-gray-900 text-white border-gray-700'
           />
         </div>
@@ -330,7 +332,7 @@ export function PaidCoursesListing() {
                     <Input
                       id='title'
                       value={newCourse.title}
-                      onChange={(e) => setNewCourse({ ...newCourse, title: e.target.value })}
+                      onChange={e => setNewCourse({ ...newCourse, title: e.target.value })}
                       className='col-span-3'
                     />
                   </div>
@@ -342,9 +344,7 @@ export function PaidCoursesListing() {
                       id='price'
                       type='number'
                       value={newCourse.price}
-                      onChange={(e) =>
-                        setNewCourse({ ...newCourse, price: Number(e.target.value) })
-                      }
+                      onChange={e => setNewCourse({ ...newCourse, price: Number(e.target.value) })}
                       className='col-span-3'
                     />
                   </div>
@@ -356,7 +356,7 @@ export function PaidCoursesListing() {
         </div>
 
         <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
-          {currentCourses.map((course) => (
+          {currentCourses.map(course => (
             <Card
               key={course.id}
               className='bg-gray-800/50 backdrop-blur-sm border-gray-700 text-white 
@@ -416,7 +416,7 @@ export function PaidCoursesListing() {
 
         <div className='flex justify-center mt-8 gap-4'>
           <Button
-            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
             disabled={currentPage === 1}
           >
             Previous
@@ -425,7 +425,7 @@ export function PaidCoursesListing() {
             Page {currentPage} of {totalPages}
           </span>
           <Button
-            onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
             disabled={currentPage === totalPages}
           >
             Next

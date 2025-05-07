@@ -1,14 +1,16 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+
 import { sendPasswordResetEmail } from 'firebase/auth';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { toast } from 'react-hot-toast';
+
 import { auth } from '../../lib/firebase';
 import { Button } from '../lib/ui/button';
 import { Input } from '../lib/ui/input';
 import { Label } from '../lib/ui/label';
-import { toast } from 'react-hot-toast';
-import Link from 'next/link';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
@@ -44,7 +46,7 @@ export default function ForgotPasswordPage() {
               id='email'
               type='email'
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={e => setEmail(e.target.value)}
               required
               className='w-full'
               placeholder='أدخل بريدك الإلكتروني'

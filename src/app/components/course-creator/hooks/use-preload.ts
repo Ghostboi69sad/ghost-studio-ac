@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+
 import { VideoService } from '../../../lib/video-service';
 
 interface PreloadOptions {
@@ -11,7 +12,7 @@ export function usePreload(urls: string[], options: PreloadOptions = {}) {
   useEffect(() => {
     const preloadVideos = async () => {
       try {
-        await Promise.all(urls.map((url) => VideoService.preloadVideo(url, options)));
+        await Promise.all(urls.map(url => VideoService.preloadVideo(url, options)));
       } catch (error) {
         console.error('Error preloading videos:', error);
       }

@@ -5,8 +5,8 @@
   "trailingComma": "es5",
   "printWidth": 100,
   "bracketSpacing": true,
-  "endOfLine": "lf",
-  "arrowParens": "always",
-  "jsxSingleQuote": true,
-  "bracketSameLine": false
+  "useTabs": false,
+  "arrowParens": "avoid",
+  "endOfLine": "auto",
+  "jsxSingleQuote": true
 }

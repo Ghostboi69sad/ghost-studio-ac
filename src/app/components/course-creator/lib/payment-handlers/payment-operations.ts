@@ -1,4 +1,5 @@
 import { toast } from 'react-hot-toast';
+
 import { Course } from '../../types/course';
 
 export async function createStripePrice(course: Course, priceUSD: number): Promise<string> {

@@ -1,5 +1,6 @@
-import { database } from './firebase';
 import { ref, set } from 'firebase/database';
+
+import { database } from './firebase';
 
 export async function importRealtimeDB(data: any, path: string): Promise<void> {
   try {

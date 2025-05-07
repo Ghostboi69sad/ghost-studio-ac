@@ -1,7 +1,8 @@
 import { ref, update } from 'firebase/database';
+import { toast } from 'react-hot-toast';
+
 import { database } from '../../../lib/firebase';
 import { Course } from '../types/course';
-import { toast } from 'react-hot-toast';
 
 export async function saveCourseToDatabase(
   course: Course,
@@ -9,10 +10,10 @@ export async function saveCourseToDatabase(
 ): Promise<void> {
   try {
     const courseRef = ref(database, `courses/${course.id}`);
-    const simplifiedChapters = updatedFields.chapters?.map((chapter) => ({
+    const simplifiedChapters = updatedFields.chapters?.map(chapter => ({
       id: chapter.id,
       title: chapter.title,
-      content: chapter.content.map((item) => ({
+      content: chapter.content.map(item => ({
         id: item.id,
         type: item.type,
         name: item.name,

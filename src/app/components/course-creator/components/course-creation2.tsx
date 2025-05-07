@@ -1,17 +1,19 @@
 'use client';
 
 import { useState, useRef, ChangeEvent, useEffect } from 'react';
+
+import { ref as dbRef, push, set, onValue } from 'firebase/database';
 import { useRouter } from 'next/navigation';
-import { Input } from './ui/input';
+import { v4 as uuidv4 } from 'uuid';
+
+import EnhancedVideoPlayer from './EnhancedVideoPlayer';
 import { Button } from './ui/button';
-import { Textarea } from './ui/textarea';
+import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { database } from '../../../lib/firebase';
-import { ref as dbRef, push, set, onValue } from 'firebase/database';
+import { Textarea } from './ui/textarea';
 import { useAuth } from '../../../lib/auth-context';
-import { v4 as uuidv4 } from 'uuid';
-import EnhancedVideoPlayer from './EnhancedVideoPlayer';
+import { database } from '../../../lib/firebase';
 import { Course } from '../../course-listing/types/course';
 
 interface Lesson {
@@ -48,7 +50,7 @@ export default function CourseCreator2({ initialCourse, onSave, readOnly }: Cour
 
   useEffect(() => {
     // Preload metadata for all lesson videos
-    lessons.forEach((lesson) => {
+    lessons.forEach(lesson => {
       if (!videoCache.current.has(lesson.videoUrl)) {
         const video = document.createElement('video');
         video.preload = 'metadata';
@@ -71,7 +73,7 @@ export default function CourseCreator2({ initialCourse, onSave, readOnly }: Cour
       thumbnailUrl: '',
     };
 
-    setLessons((prevLessons) => [...prevLessons, newLesson]);
+    setLessons(prevLessons => [...prevLessons, newLesson]);
     setCurrentLessonTitle('');
     setCurrentLessonUrl('');
     setCurrentLessonDuration(0);
@@ -102,7 +104,7 @@ export default function CourseCreator2({ initialCourse, onSave, readOnly }: Cour
 
     set(courseRef, courseData)
       .then(() => router.push('/courses'))
-      .catch((error) => console.error('Error creating course:', error));
+      .catch(error => console.error('Error creating course:', error));
   };
 
   const handleVideoMetadataLoaded = (duration: number) => {
@@ -119,23 +121,19 @@ export default function CourseCreator2({ initialCourse, onSave, readOnly }: Cour
       <div className='grid gap-6'>
         <div>
           <Label htmlFor='courseName'>Course Name</Label>
-          <Input
-            id='courseName'
-            value={courseName}
-            onChange={(e) => setCourseName(e.target.value)}
-          />
+          <Input id='courseName' value={courseName} onChange={e => setCourseName(e.target.value)} />
         </div>
         <div>
           <Label htmlFor='courseDescription'>Course Description</Label>
           <Textarea
             id='courseDescription'
             value={courseDescription}
-            onChange={(e) => setCourseDescription(e.target.value)}
+            onChange={e => setCourseDescription(e.target.value)}
           />
         </div>
         <div>
           <Label htmlFor='category'>Category</Label>
-          <Input id='category' value={category} onChange={(e) => setCategory(e.target.value)} />
+          <Input id='category' value={category} onChange={e => setCategory(e.target.value)} />
         </div>
         <div>
           <Label htmlFor='price'>Price</Label>
@@ -143,16 +141,14 @@ export default function CourseCreator2({ initialCourse, onSave, readOnly }: Cour
             id='price'
             type='number'
             value={price}
-            onChange={(e) => setPrice(Number(e.target.value))}
+            onChange={e => setPrice(Number(e.target.value))}
           />
         </div>
         <div>
           <Label htmlFor='subscriptionType'>Subscription Type</Label>
           <Select
             value={subscriptionType}
-            onValueChange={(value) =>
-              setSubscriptionType(value as 'free' | 'paid' | 'subscription')
-            }
+            onValueChange={value => setSubscriptionType(value as 'free' | 'paid' | 'subscription')}
           >
             <SelectTrigger>
               <SelectValue placeholder='Select a subscription type' />
@@ -174,7 +170,7 @@ export default function CourseCreator2({ initialCourse, onSave, readOnly }: Cour
               <EnhancedVideoPlayer
                 src={lesson.videoUrl}
                 thumbnailUrl={lesson.thumbnailUrl}
-                onProgress={(progress) => {
+                onProgress={progress => {
                   // Handle progress if needed
                   console.log(`Lesson ${lesson.id} progress: ${progress}%`);
                 }}
@@ -185,18 +181,18 @@ export default function CourseCreator2({ initialCourse, onSave, readOnly }: Cour
             <Input
               placeholder='Lesson Title'
               value={currentLessonTitle}
-              onChange={(e) => setCurrentLessonTitle(e.target.value)}
+              onChange={e => setCurrentLessonTitle(e.target.value)}
             />
             <Input
               placeholder='Video URL (S3 or CloudFront)'
               value={currentLessonUrl}
-              onChange={(e) => setCurrentLessonUrl(e.target.value)}
+              onChange={e => setCurrentLessonUrl(e.target.value)}
             />
             {currentLessonUrl && (
               <EnhancedVideoPlayer
                 src={currentLessonUrl}
                 onLoadedMetadata={handleVideoMetadataLoaded}
-                onProgress={(progress) => {
+                onProgress={progress => {
                   // Handle progress for new lesson
                   console.log(`New lesson progress: ${progress}%`);
                 }}

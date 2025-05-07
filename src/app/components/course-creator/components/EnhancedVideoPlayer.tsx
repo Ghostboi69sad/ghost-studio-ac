@@ -1,8 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Button } from './ui/button';
-import { Slider } from './ui/ui/slider';
+
 import {
   Play,
   Pause,
@@ -13,6 +12,9 @@ import {
   Maximize,
   Minimize,
 } from 'lucide-react';
+
+import { Button } from './ui/button';
+import { Slider } from './ui/ui/slider';
 
 interface EnhancedVideoPlayerProps {
   src?: string;
@@ -152,7 +154,7 @@ const EnhancedVideoPlayer: React.FC<EnhancedVideoPlayerProps> = ({
             value={[currentTime]}
             max={duration}
             step={0.1}
-            onValueChange={(value) => handleSeek(value[0])}
+            onValueChange={value => handleSeek(value[0])}
             className='cursor-pointer'
           />
         </div>
@@ -206,7 +208,7 @@ const EnhancedVideoPlayer: React.FC<EnhancedVideoPlayerProps> = ({
                 max={1}
                 step={0.1}
                 className='w-24'
-                onValueChange={(value) => handleVolumeChange(value[0])}
+                onValueChange={value => handleVolumeChange(value[0])}
               />
             </div>
 

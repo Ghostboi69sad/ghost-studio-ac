@@ -1,9 +1,16 @@
-import { NextResponse } from 'next/server';
-import { paypalClient } from '../../../../lib/paypal-config';
+/* eslint-disable import/order */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable no-console */
+/* eslint-disable @typescript-eslint/no-unused-vars */
+
 import paypal from '@paypal/checkout-server-sdk';
-const { orders } = paypal;
-import { database } from '../../../lib/firebase';
 import { ref, set, get } from 'firebase/database';
+import { NextResponse } from 'next/server';
+
+import { database } from '../../../lib/firebase';
+import { paypalClient } from '../../../../lib/paypal-config';
+
+const { orders } = paypal;
 
 interface PayPalLink {
   href: string;

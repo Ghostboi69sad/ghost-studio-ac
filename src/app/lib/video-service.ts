@@ -1,5 +1,5 @@
-import { getMediaUrl } from '../components/course-creator/lib/aws/cloudfront-config';
 import { cacheManager } from './cache-manager';
+import { getMediaUrl } from '../components/course-creator/lib/aws/cloudfront-config';
 
 export class VideoService {
   private static readonly CACHE_TTL = 1000 * 60 * 60; // ساعة واحدة

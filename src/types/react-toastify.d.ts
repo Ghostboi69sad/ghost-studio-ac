@@ -2,7 +2,13 @@ declare module 'react-toastify' {
   import { ReactNode, Component } from 'react';
 
   export interface ToastContainerProps {
-    position?: 'top-right' | 'top-center' | 'top-left' | 'bottom-right' | 'bottom-center' | 'bottom-left';
+    position?:
+      | 'top-right'
+      | 'top-center'
+      | 'top-left'
+      | 'bottom-right'
+      | 'bottom-center'
+      | 'bottom-left';
     autoClose?: number | false;
     hideProgressBar?: boolean;
     newestOnTop?: boolean;
@@ -35,4 +41,4 @@ declare module 'react-toastify' {
     warning(message: ReactNode, options?: ToastOptions): React.ReactText;
     dark(message: ReactNode, options?: ToastOptions): React.ReactText;
   };
-} 
+}

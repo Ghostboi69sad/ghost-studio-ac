@@ -1,9 +1,11 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+
 import { useRouter } from 'next/navigation';
-import { useAuth } from '../lib/auth-context';
 import { toast } from 'react-toastify';
+
+import { useAuth } from '../lib/auth-context';
 
 interface PlanType {
   id: string;
@@ -141,7 +143,7 @@ export default function PricingPlan() {
         )}
 
         <div className='grid md:grid-cols-2 gap-8'>
-          {plans.map((plan) => (
+          {plans.map(plan => (
             <div
               key={plan.id}
               className={`bg-white rounded-lg shadow-xl p-8 ${

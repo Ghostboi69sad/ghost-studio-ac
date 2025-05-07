@@ -6,28 +6,34 @@
     "dev": "next dev -p 3000",
     "dev:creator": "next dev -p 3006",
     "dev:listing": "next dev -p 3005",
-    "build": "yarn install && next build",
+    "build": "next build",
     "build:creator": "cd src/app/components/course-creator && next build",
     "build:listing": "cd src/app/components/course-listing && next build",
     "start": "next start",
     "start:creator": "next start -p 3006",
     "start:listing": "next start -p 3005",
-    "lint": "eslint . --ext .ts,.tsx --ignore-path .gitignore",
-    "lint:fix": "eslint . --ext .ts,.tsx --fix --ignore-path .gitignore",
-    "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,md}\"",
-    "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,md}\"",
-    "format:fix": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,md}\" --config .prettierrc",
+    "lint": "eslint . --ext .ts,.tsx,.js,.jsx",
+    "lint:fix": "eslint . --ext .ts,.tsx,.js,.jsx --fix",
+    "lint:strict": "eslint . --ext .ts,.tsx,.js,.jsx --max-warnings=0",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "type-check": "tsc --noEmit",
+    "validate": "npm run type-check && npm run lint:strict && npm run format:check",
+    "check": "npm run format:check && npm run lint",
+    "check:all": "npm run format:fix && npm run lint:strict",
+    "fix": "npm run format && npm run lint:fix",
     "backup": "ts-node src/scripts/manage-backups.ts backup",
     "restore": "ts-node src/scripts/manage-backups.ts restore",
-    "netlify-build": "NEXT_PUBLIC_FIREBASE_PRIVATE_KEY=\"$(echo $FIREBASE_PRIVATE_KEY | base64 -d)\" next build",
-    "vercel-build": "yarn install && next build",
-    "start:prod": "next start -p $PORT"
+    "prepare": "husky install"
   },
   "dependencies": {
     "@aws-sdk/client-cloudfront": "^3.682.0",
     "@aws-sdk/client-s3": "^3.688.0",
     "@aws-sdk/cloudfront-signer": "^3.686.0",
     "@aws-sdk/s3-request-presigner": "^3.686.0",
+    "@firebase/component": "^0.6.4",
+    "@firebase/database": "^0.14.4",
+    "@firebase/database-compat": "^0.3.4",
     "@netlify/functions": "^2.8.2",
     "@netlify/plugin-nextjs": "^5.8.1",
     "@paypal/checkout-server-sdk": "^1.0.3",
@@ -48,6 +54,8 @@
     "axios": "^1.7.7",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
+    "esutils": "^2.0.2",
+    "eslint-visitor-keys": "^3.4.1",
     "firebase": "^11.0.1",
     "firebase-admin": "^11.11.0",
     "lucide-react": "^0.454.0",
@@ -89,9 +97,14 @@
     "prettier": "^3.3.3",
     "tailwindcss": "^3.4.1",
     "ts-node": "^10.9.2",
-    "typescript": "^5.5.0"
+    "typescript": "~5.5.0"
   },
   "engines": {
     "node": ">=18.0.0"
+  },
+  "resolutions": {
+    "@firebase/component": "^0.6.4",
+    "esutils": "^2.0.2",
+    "eslint-visitor-keys": "^3.4.1"
   }
 }

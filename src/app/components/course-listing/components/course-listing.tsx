@@ -1,9 +1,18 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+
+import { loadStripe } from '@stripe/stripe-js';
+import { ref, onValue, push, remove, update, set, get } from 'firebase/database';
+import { Star, ChevronLeft, ChevronRight, Trash2, Edit, User, Clock, BookOpen } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
-import { Input } from './ui/input';
+import { useRouter } from 'next/navigation';
+import { toast } from 'react-hot-toast';
+
+import { useAuth } from '../../../lib/auth-context';
+import { database } from '../lib/firebase';
+import { Course, Lesson, Chapter, SubscriptionType } from '../types/course';
 import { Button } from './ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from './ui/card';
 import {
@@ -15,16 +24,9 @@ import {
   DialogFooter,
   DialogDescription,
 } from './ui/dialog';
+import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { Star, ChevronLeft, ChevronRight, Trash2, Edit, User, Clock, BookOpen } from 'lucide-react';
-import { database } from '../lib/firebase';
-import { ref, onValue, push, remove, update, set, get } from 'firebase/database';
-import { useAuth } from '../../../lib/auth-context';
-import Image from 'next/image';
-import { Course, Lesson, Chapter, SubscriptionType } from '../types/course';
-import { loadStripe } from '@stripe/stripe-js';
-import { toast } from 'react-hot-toast';
 
 interface StripeProduct {
   id: string;
@@ -38,7 +40,7 @@ const calculateVideoCount = (chapters: Chapter[] = []) => {
   return chapters.reduce((acc, chapter) => {
     if (!chapter) return acc;
 
-    const contentCount = chapter.content?.filter((item) => item.type === 'video')?.length || 0;
+    const contentCount = chapter.content?.filter(item => item.type === 'video')?.length || 0;
     const lessonsCount = chapter.lessons?.length || 0;
 
     return acc + contentCount + lessonsCount;
@@ -77,7 +79,7 @@ export function CourseListingComponent() {
       router.push('/login');
     } else {
       const coursesRef = ref(database, 'courses');
-      onValue(coursesRef, (snapshot) => {
+      onValue(coursesRef, snapshot => {
         const data = snapshot.val();
         if (data) {
           const courseList = Object.entries(data).map(([id, course]) => ({
@@ -91,7 +93,7 @@ export function CourseListingComponent() {
   }, [user, router]);
 
   const coursesPerPage = 15;
-  const filteredCourses = courses.filter((course) =>
+  const filteredCourses = courses.filter(course =>
     course.title?.toLowerCase().includes(searchTerm.toLowerCase())
   );
   const totalPages = Math.ceil(filteredCourses.length / coursesPerPage);
@@ -325,7 +327,7 @@ export function CourseListingComponent() {
             type='text'
             placeholder='Search courses'
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={e => setSearchTerm(e.target.value)}
             className='w-full bg-gray-900 text-white border-gray-700'
           />
         </div>
@@ -361,7 +363,7 @@ export function CourseListingComponent() {
                     <Input
                       id='name'
                       value={newCourse.name}
-                      onChange={(e) => setNewCourse({ ...newCourse, name: e.target.value })}
+                      onChange={e => setNewCourse({ ...newCourse, name: e.target.value })}
                       className='col-span-3'
                     />
                   </div>
@@ -372,7 +374,7 @@ export function CourseListingComponent() {
                     <Input
                       id='description'
                       value={newCourse.description}
-                      onChange={(e) => setNewCourse({ ...newCourse, description: e.target.value })}
+                      onChange={e => setNewCourse({ ...newCourse, description: e.target.value })}
                       className='col-span-3'
                     />
                   </div>
@@ -383,7 +385,7 @@ export function CourseListingComponent() {
                     <Input
                       id='category'
                       value={newCourse.category}
-                      onChange={(e) => setNewCourse({ ...newCourse, category: e.target.value })}
+                      onChange={e => setNewCourse({ ...newCourse, category: e.target.value })}
                       className='col-span-3'
                     />
                   </div>
@@ -395,7 +397,7 @@ export function CourseListingComponent() {
                       id='price'
                       type='number'
                       value={newCourse.price}
-                      onChange={(e) =>
+                      onChange={e =>
                         setNewCourse({ ...newCourse, price: parseFloat(e.target.value) })
                       }
                       className='col-span-3'
@@ -407,7 +409,7 @@ export function CourseListingComponent() {
                     </Label>
                     <Select
                       value={newCourse.accessType}
-                      onValueChange={(value) =>
+                      onValueChange={value =>
                         setNewCourse({ ...newCourse, accessType: value as 'free' | 'paid' })
                       }
                     >
@@ -426,7 +428,7 @@ export function CourseListingComponent() {
                     </Label>
                     <Select
                       value={newCourse.isPublic ? 'true' : 'false'}
-                      onValueChange={(value) =>
+                      onValueChange={value =>
                         setNewCourse({
                           ...newCourse,
                           isPublic: value === 'true',
@@ -450,7 +452,7 @@ export function CourseListingComponent() {
         </div>
         <div className='bg-gray-100 p-8 rounded-lg'>
           <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
-            {filteredCourses.map((course) => (
+            {filteredCourses.map(course => (
               <Card
                 key={course.id}
                 className='bg-gray-800 border-gray-700 text-white hover:bg-gray-700 transition-colors duration-200'
@@ -492,7 +494,7 @@ export function CourseListingComponent() {
                   </span>
                   <Button
                     variant='outline'
-                    onClick={(e) => handleEditCourse(course.id, e)}
+                    onClick={e => handleEditCourse(course.id, e)}
                     className='flex items-center'
                   >
                     <Edit className='w-4 h-4 mr-2 text-purple-400' />
@@ -513,10 +515,7 @@ export function CourseListingComponent() {
                   {user?.role === 'admin' && (
                     <Dialog>
                       <DialogTrigger asChild>
-                        <Button
-                          variant='destructive'
-                          onClick={(e) => handleDeleteDialog(course, e)}
-                        >
+                        <Button variant='destructive' onClick={e => handleDeleteDialog(course, e)}>
                           <Trash2 className='w-4 h-4 mr-2' /> Delete Course
                         </Button>
                       </DialogTrigger>
@@ -567,7 +566,7 @@ export function CourseListingComponent() {
         </div>
         <div className='flex justify-center mt-8 space-x-4'>
           <Button
-            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
             disabled={currentPage === 1}
           >
             <ChevronLeft className='w-4 h-4 mr-2' /> Previous
@@ -576,7 +575,7 @@ export function CourseListingComponent() {
             Page {currentPage} of {totalPages}
           </span>
           <Button
-            onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
             disabled={currentPage === totalPages}
           >
             Next <ChevronRight className='w-4 h-4 ml-2' />

@@ -1,7 +1,8 @@
-import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
-import { initAdmin } from '../../../../lib/firebase-admin';
+import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
+
+import { initAdmin } from '../../../../lib/firebase-admin';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2023-08-16',

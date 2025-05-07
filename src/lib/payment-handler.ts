@@ -1,5 +1,6 @@
-import { PaymentMethod, Course } from '../app/components/course-creator/types/course';
 import { toast } from 'react-hot-toast';
+
+import { PaymentMethod, Course } from '../app/components/course-creator/types/course';
 
 export async function handlePayment(course: Course, userId: string, paymentMethod: PaymentMethod) {
   try {

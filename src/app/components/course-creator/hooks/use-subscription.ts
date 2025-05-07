@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
-import { useAuth } from '../../../lib/auth-context';
+
 import { toast } from 'react-toastify';
+
+import { useAuth } from '../../../lib/auth-context';
 
 interface SubscriptionDetails {
   planId: string;

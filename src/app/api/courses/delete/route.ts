@@ -1,6 +1,7 @@
-import { NextResponse } from 'next/server';
-import { database } from '../../../../lib/firebase';
 import { ref, remove, get } from 'firebase/database';
+import { NextResponse } from 'next/server';
+
+import { database } from '../../../../lib/firebase';
 import { isAdminUser } from '../../../lib/auth-helpers';
 
 export async function DELETE(request: Request) {

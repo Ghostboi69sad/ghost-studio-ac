@@ -1,8 +1,9 @@
-import { NextResponse } from 'next/server';
-import { database } from '../../../../lib/firebase';
-import { ref, get } from 'firebase/database';
-import { Course } from '../../../components/course-listing/types/course';
 import { getAuth } from 'firebase/auth';
+import { ref, get } from 'firebase/database';
+import { NextResponse } from 'next/server';
+
+import { database } from '../../../../lib/firebase';
+import { Course } from '../../../components/course-listing/types/course';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,7 +18,7 @@ async function fetchPaidCourses(): Promise<Course[]> {
   }
 
   const courses: Course[] = [];
-  snapshot.forEach((childSnapshot) => {
+  snapshot.forEach(childSnapshot => {
     const courseData = childSnapshot.val();
     console.log('بيانات الدورة:', courseData);
     console.log('نوع الوصول:', courseData.accessType);

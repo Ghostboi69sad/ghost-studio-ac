@@ -1,19 +1,20 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { database } from '../../lib/firebase';
+
 import { ref, onValue, update, get } from 'firebase/database';
+import { useParams, useRouter } from 'next/navigation';
+import { toast } from 'react-toastify';
+import { v4 as uuidv4 } from 'uuid';
+
+import CourseCreator2 from '../../components/course-creator/components/course-creation2';
+import { VideoPlayer } from '../../components/course-creator/components/video-player/index';
+import { Course } from '../../components/course-creator/types/course';
 import { useAuth } from '../../lib/auth-context';
+import { getMediaUrl } from '../../lib/aws/cloudfront-config';
+import { database, auth } from '../../lib/firebase';
 import { Button } from '../../lib/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '../../lib/ui/card';
-import { Course } from '../../components/course-creator/types/course';
-import { VideoPlayer } from '../../components/course-creator/components/video-player/index';
-import { toast } from 'react-toastify';
-import { getMediaUrl } from '../../lib/aws/cloudfront-config';
-import { auth } from '../../lib/firebase';
-import { v4 as uuidv4 } from 'uuid';
-import CourseCreator2 from '../../components/course-creator/components/course-creation2';
 
 export default function CoursePage({ params }: { params: { id: string } }) {
   const [course, setCourse] = useState<Course | null>(null);
@@ -28,7 +29,7 @@ export default function CoursePage({ params }: { params: { id: string } }) {
 
   useEffect(() => {
     const courseRef = ref(database, `courses/${id}`);
-    const unsubscribe = onValue(courseRef, (snapshot) => {
+    const unsubscribe = onValue(courseRef, snapshot => {
       const data = snapshot.val();
       if (data) {
         const courseData = {
@@ -245,7 +246,7 @@ export default function CoursePage({ params }: { params: { id: string } }) {
           {canAccessCourse(course) ? (
             <CourseCreator2
               initialCourse={course}
-              onSave={async (updatedCourse) => {
+              onSave={async updatedCourse => {
                 setCourse(updatedCourse);
                 toast.success('تم تحديث الدورة بنجاح');
               }}

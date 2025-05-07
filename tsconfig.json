@@ -20,15 +20,12 @@
       "@/lib/*": ["src/app/lib/*"],
       "@/types/*": ["src/types/*"]
     },
-    "typeRoots": [
-      "./node_modules/@types",
-      "./src/types"
-    ],
-    "types": [
-      "node",
-      "react-hot-toast",
-      "react-toastify",
-      "@paypal/checkout-server-sdk"
+    "typeRoots": ["./node_modules/@types", "./src/types"],
+    "types": ["node", "react-hot-toast", "react-toastify", "@paypal/checkout-server-sdk"],
+    "plugins": [
+      {
+        "name": "next"
+      }
     ]
   },
   "include": [

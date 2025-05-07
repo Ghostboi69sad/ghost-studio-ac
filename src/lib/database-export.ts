@@ -1,5 +1,6 @@
-import { database } from './firebase';
 import { ref, get } from 'firebase/database';
+
+import { database } from './firebase';
 
 export async function exportRealtimeDB(path: string = '/', filename: string = 'backup.json') {
   try {

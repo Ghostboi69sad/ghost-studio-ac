@@ -1,13 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Input } from '../lib/ui/input';
-import { Button } from '../lib/ui/button';
-import { Label } from '../lib/ui/label';
-import { useAuth } from '../lib/auth-context';
+
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
+
+import { useAuth } from '../lib/auth-context';
+import { Button } from '../lib/ui/button';
+import { Input } from '../lib/ui/input';
+import { Label } from '../lib/ui/label';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -50,7 +52,7 @@ export default function Login() {
               type='email'
               placeholder='أدخل بريدك الإلكتروني'
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={e => setEmail(e.target.value)}
               className='w-full'
               required
               disabled={isLoading}
@@ -65,7 +67,7 @@ export default function Login() {
               type='password'
               placeholder='أدخل كلمة المرور'
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={e => setPassword(e.target.value)}
               className='w-full'
               required
               disabled={isLoading}

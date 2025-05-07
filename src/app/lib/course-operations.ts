@@ -1,4 +1,5 @@
 import { ref, update as firebaseUpdate } from 'firebase/database';
+
 import { database } from './firebase';
 import { Course, CourseUpdate } from '../components/course-creator/types/course';
 
@@ -16,12 +17,12 @@ export async function saveCourseToDatabase(course: Course, update: CourseUpdate)
     accessType: update.accessType,
     isPublic: update.isPublic,
     // Map chapters to store minimal data
-    chapters: course.chapters?.map((chapter) => ({
+    chapters: course.chapters?.map(chapter => ({
       id: chapter.id,
       title: chapter.title,
       order: chapter.order,
       // Store only content keys instead of full URLs
-      content: chapter.content.map((item) => ({
+      content: chapter.content.map(item => ({
         id: item.id,
         type: item.type,
         name: item.name,

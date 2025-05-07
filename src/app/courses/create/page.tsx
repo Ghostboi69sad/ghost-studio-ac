@@ -1,13 +1,15 @@
 'use client';
 
 import { useEffect } from 'react';
+
 import { useRouter } from 'next/navigation';
-import { useAuth } from '../../lib/auth-context';
-import CourseCreator2 from '../../components/course-creator/components/course-creation2';
-import { v4 as uuidv4 } from 'uuid';
-import { Course } from '../../components/course-creator/types/course';
-import { saveCourseToDatabase } from '../../components/course-creator/lib/course-operations';
 import { toast } from 'react-toastify';
+import { v4 as uuidv4 } from 'uuid';
+
+import CourseCreator2 from '../../components/course-creator/components/course-creation2';
+import { saveCourseToDatabase } from '../../components/course-creator/lib/course-operations';
+import { Course } from '../../components/course-creator/types/course';
+import { useAuth } from '../../lib/auth-context';
 
 export default function CreateCoursePage() {
   const initialCourse: Course = {

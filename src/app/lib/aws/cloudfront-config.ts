@@ -70,7 +70,7 @@ export async function invalidateCache(paths: string[]) {
           CallerReference: Date.now().toString(),
           Paths: {
             Quantity: paths.length,
-            Items: paths.map((path) => (path.startsWith('/') ? path : `/${path}`)),
+            Items: paths.map(path => (path.startsWith('/') ? path : `/${path}`)),
           },
         },
       })

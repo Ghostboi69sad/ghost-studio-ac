@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+
 import { getMediaUrl } from '../../lib/aws/cloudfront-config';
 
 export async function GET(request: Request) {

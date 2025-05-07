@@ -1,9 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useAuth } from '../../lib/auth-context';
 import { toast } from 'react-toastify';
+
+import { useAuth } from '../../lib/auth-context';
 import { Button } from '../../lib/ui/button';
 
 export default function PaymentSuccessContent() {

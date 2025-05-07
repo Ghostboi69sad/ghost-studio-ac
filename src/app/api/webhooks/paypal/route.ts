@@ -1,7 +1,8 @@
-import { NextResponse } from 'next/server';
-import { database } from '../../../lib/firebase';
-import { headers } from 'next/headers';
 import { ref, update, get } from 'firebase/database';
+import { headers } from 'next/headers';
+import { NextResponse } from 'next/server';
+
+import { database } from '../../../lib/firebase';
 
 export async function POST(request: Request) {
   try {

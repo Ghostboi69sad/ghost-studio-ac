@@ -1,4 +1,5 @@
 import { toast } from 'react-hot-toast';
+
 import { Course, PaymentMethod } from '../../types/course';
 
 interface PaymentSetupState {

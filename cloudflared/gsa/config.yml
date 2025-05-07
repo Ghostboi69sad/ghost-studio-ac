@@ -1,0 +1,7 @@
+tunnel: ${CLOUDFLARE_TUNNEL_GSA_ID}
+credentials-file: /etc/cloudflared/creds.json
+
+ingress:
+  - hostname: ghoststudioacademy.store
+    service: http://ghost-studio:3000
+  - service: http_status:404

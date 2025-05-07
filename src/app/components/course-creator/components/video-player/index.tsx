@@ -1,18 +1,20 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Card } from '../ui/ui/card';
-import { Slider } from '../ui/ui/slider';
-import { Button } from '../ui/button';
+
 import { Volume2, VolumeX, Play, Pause, Settings, Maximize } from 'lucide-react';
+
+import { cacheManager } from '../../../../lib/cache-manager';
+import { VideoService } from '../../../../lib/video-service';
+import { Button } from '../ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu';
-import { cacheManager } from '../../../../lib/cache-manager';
-import { VideoService } from '../../../../lib/video-service';
+import { Card } from '../ui/ui/card';
+import { Slider } from '../ui/ui/slider';
 
 interface VideoPlayerProps {
   url: string;

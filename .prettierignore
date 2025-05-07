@@ -1,5 +1,8 @@
 .next
-node_modules
 build
+node_modules
+public
+*.config.js
+*.config.ts
+*.config.mjs
 dist
-public 
