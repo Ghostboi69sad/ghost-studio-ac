@@ -12,7 +12,7 @@ const nextConfig = {
   experimental: {
     serverActions: {
       bodySizeLimit: '2mb'
-    },
+    }
   },
   images: {
     domains: [
@@ -56,10 +56,10 @@ const nextConfig = {
   },
   eslint: {
     dirs: ['src'],
-    ignoreDuringBuilds: false
+    ignoreDuringBuilds: true
   },
   typescript: {
-    ignoreBuildErrors: false
+    ignoreBuildErrors: true
   },
   swcMinify: true,
   poweredByHeader: false

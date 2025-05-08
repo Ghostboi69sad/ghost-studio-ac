@@ -1,15 +1,14 @@
-/** @type {import('postcss-load-config').Config} */
 const config = {
   plugins: {
+    'postcss-import': {},
+    'postcss-nesting': {},
     tailwindcss: {},
     autoprefixer: {},
     'postcss-preset-env': {
       stage: 3,
-      features: {
-        'nesting-rules': true
-      }
+      features: { 'nesting-rules': false }
     }
   }
 };
 
-export default config;
+module.exports = config;
