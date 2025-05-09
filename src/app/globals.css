@@ -6,16 +6,10 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
-  }
-}
-
 @layer base {
   :root {
     --background: 0 0% 100%;
-    --foreground: 0 0% 3.9%;
+    --foreground: 240 10% 3.9%;
     --card: 0 0% 100%;
     --card-foreground: 0 0% 3.9%;
     --popover: 0 0% 100%;
@@ -68,7 +62,20 @@ body {
   }
 
   body {
-    @apply bg-background text-foreground antialiased;
+    @apply bg-background text-foreground antialiased font-sans;
     font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+@layer components {
+  .loading-spinner {
+    @apply w-12 h-12 border-4 border-gray-300 rounded-full animate-spin;
+    border-top-color: theme('colors.purple.600');
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
   }
 }

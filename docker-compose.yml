@@ -7,42 +7,37 @@ services:
       dockerfile: Dockerfile
     ports:
       - "3000:3000"
-    env_file:
-      - .env.production
     environment:
       - NODE_ENV=production
-      - SKIP_BUILD_ERRORS=true
+      - NEXT_TELEMETRY_DISABLED=1
+    volumes:
+      - .env.production:/app/.env.production:ro
     restart: unless-stopped
     networks:
       - app-network
-    healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
 
   cloudflared-gsa:
     image: cloudflare/cloudflared:latest
-    command: tunnel run
+    command: ["tunnel", "--origincert", "/cloudflared/cert.pem", "run", "gsa-tunnel"]
     environment:
-      - TUNNEL_TOKEN=${CLOUDFLARE_GSA_TUNNEL_TOKEN}
+      - TUNNEL_TOKEN=eyJhIjoiNWYyMTA2YmIzMDZjYjZmNDFlMjViNzdjY2MyYTJkYWYiLCJ0IjoiN2YwZmE0YjgtNTc5Ni00NzdhLTkwM2UtM2I0YjExYjg2ZDk1IiwicyI6Ik16aGpNbVF4TTJZdE1qY3lPUzAwTUdSakxUaGlPV010TnpNMk5qa3pNemxtTkdNMCJ9
+      - TUNNEL_ORIGIN_CERT=/cloudflared/cert.pem
     volumes:
-      - ./cloudflared/gsa:/etc/cloudflared:ro
+      - ./cloudflared/gsa:/cloudflared:ro
     restart: unless-stopped
     networks:
       - app-network
     depends_on:
-      ghost-studio:
-        condition: service_healthy
+      - ghost-studio
 
   cloudflared-n8n:
     image: cloudflare/cloudflared:latest
-    command: tunnel run
+    command: ["tunnel", "--origincert", "/cloudflared/cert.pem", "run", "n8n-tunnel"]
     environment:
-      - TUNNEL_TOKEN=${CLOUDFLARE_N8N_TUNNEL_TOKEN}
+      - TUNNEL_TOKEN=eyJhIjoiNWYyMTA2YmIzMDZjYjZmNDFlMjViNzdjY2MyYTJkYWYiLCJ0IjoiNjYzMjU3MTItODRjYS00OTY5LWIzYTctZGZmYzA5MGZmMWM4IiwicyI6IlkySTBaamt3T0RBdE9HSmtaQzAwWlRGaUxUaGhPVEV0WXpVek5HWmlOall4WWpObCJ9
+      - TUNNEL_ORIGIN_CERT=/cloudflared/cert.pem
     volumes:
-      - ./cloudflared/n8n:/etc/cloudflared:ro
+      - ./cloudflared/n8n:/cloudflared:ro
     restart: unless-stopped
     networks:
       - app-network
@@ -53,8 +48,9 @@ services:
     image: n8nio/n8n
     ports:
       - "5678:5678"
-    env_file:
-      - .env.production
+    environment:
+      - N8N_RUNNERS_ENABLED=true
+      - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=true
     volumes:
       - n8n_data:/home/node/.n8n
     restart: unless-stopped
@@ -64,6 +60,10 @@ services:
 networks:
   app-network:
     driver: bridge
+
+volumes:
+  n8n_data:
+    driver: local
 
 volumes:
   n8n_data:

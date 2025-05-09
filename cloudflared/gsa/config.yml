@@ -1,5 +1,6 @@
 tunnel: ${CLOUDFLARE_TUNNEL_GSA_ID}
-credentials-file: /etc/cloudflared/creds.json
+credentials-file: /cloudflared/creds.json
+originCert: /cloudflared/cert.pem
 
 ingress:
   - hostname: ghoststudioacademy.store

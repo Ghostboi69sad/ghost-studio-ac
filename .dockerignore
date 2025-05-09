@@ -3,7 +3,6 @@ git
 .next
 .env.local
 .env.development
-.env.production
 node_modules
 README.md
 .vscode
@@ -16,4 +15,7 @@ yarn-error.log*
 coverage
 .dockerignore
 Dockerfile
+build
+.git
+.md
 docker-compose

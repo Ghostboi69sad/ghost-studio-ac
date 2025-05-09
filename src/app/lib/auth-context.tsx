@@ -60,49 +60,55 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const auth = getAuth();
-    const database = getDatabase();
+// In AuthProvider
+useEffect(() => {
+  const auth = getAuth();
+  const database = getDatabase();
 
-    const unsubscribe = onAuthStateChanged(auth, async firebaseUser => {
-      if (firebaseUser) {
-        const userRef = ref(database, `users/${firebaseUser.uid}`);
-        const subscriptionRef = ref(database, `subscriptions/${firebaseUser.uid}`);
-        const purchasesRef = ref(database, `purchases/${firebaseUser.uid}`);
+  const unsubscribe = onAuthStateChanged(auth, async firebaseUser => {
+    if (firebaseUser) {
+      const userRef = ref(database, `users/${firebaseUser.uid}`);
+      const subscriptionRef = ref(database, `subscriptions/${firebaseUser.uid}`);
+      const purchasesRef = ref(database, `purchases/${firebaseUser.uid}`);
 
-        try {
-          const [userSnapshot, subscriptionSnapshot, purchasesSnapshot] = await Promise.all([
-            get(userRef),
-            get(subscriptionRef),
-            get(purchasesRef),
-          ]);
+      try {
+        const [userSnapshot, subscriptionSnapshot, purchasesSnapshot] = await Promise.all([
+          get(userRef),
+          get(subscriptionRef),
+          get(purchasesRef),
+        ]);
 
-          const userData = userSnapshot.val();
-          const subscriptionData = subscriptionSnapshot.val();
-          const purchasesData = purchasesSnapshot.val();
+        const userData = userSnapshot.val();
+        const subscriptionData = subscriptionSnapshot.val();
+        const purchasesData = purchasesSnapshot.val();
 
-          const authUser: AuthUser = {
-            ...firebaseUser,
-            role: userData?.role || 'user',
-            hasActiveSubscription: subscriptionData?.status === 'active',
-            purchases: purchasesData || {},
-            hasPurchased: (courseId: string) => purchasesData?.[courseId]?.status === 'active',
-            getIdToken: () => firebaseUser.getIdToken(),
-          };
+        console.log('User data from Firebase:', userData); // Add this line
+        console.log('Subscription data:', subscriptionData); // Add this line
+        console.log('Purchases data:', purchasesData); // Add this line
 
-          setUser(authUser);
-        } catch (error) {
-          console.error('خطأ في جلب بيانات المستخدم:', error);
-          setUser(null);
-        }
-      } else {
+        const authUser: AuthUser = {
+          ...firebaseUser,
+          role: userData?.role || 'user',
+          hasActiveSubscription: subscriptionData?.status === 'active',
+          purchases: purchasesData || {},
+          hasPurchased: (courseId: string) => purchasesData?.[courseId]?.status === 'active',
+          getIdToken: () => firebaseUser.getIdToken(),
+        };
+
+        console.log('Auth user object:', authUser); // Add this line
+        setUser(authUser);
+      } catch (error) {
+        console.error('خطأ في جلب بيانات المستخدم:', error);
         setUser(null);
       }
-      setLoading(false);
-    });
+    } else {
+      setUser(null);
+    }
+    setLoading(false);
+  });
 
-    return () => unsubscribe();
-  }, []);
+  return () => unsubscribe();
+}, []);
 
   const login = async (email: string, password: string): Promise<void> => {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);

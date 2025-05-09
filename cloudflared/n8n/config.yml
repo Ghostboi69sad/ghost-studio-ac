@@ -1,5 +1,6 @@
 tunnel: ${CLOUDFLARE_N8N_TUNNEL_ID}
-credentials-file: /etc/cloudflared/creds.json
+credentials-file: /cloudflared/creds.json
+originCert: /cloudflared/cert.pem
 
 ingress:
   - hostname: n8ntest.ghoststudioacademy.store

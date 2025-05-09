@@ -17,20 +17,19 @@ export default function EditCoursePage() {
   const [course, setCourse] = useState<Course | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const params = useParams();
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const router = useRouter();
   const id = params?.id as string;
 
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const currentUser = auth.currentUser;
-        if (!currentUser) {
+        if (!user) {
           router.push('/login');
           return;
         }
 
-        if (!isAdminUser(currentUser)) {
+        if (!isAdmin) {
           toast.error('لا تملك الصلاحيات الكافية');
           router.push('/courses');
           return;
@@ -57,13 +56,13 @@ export default function EditCoursePage() {
     };
 
     checkAuth();
-  }, [id, router]);
+  }, [id, router, user, isAdmin]);
 
   const handleCourseUpdate = async (updatedCourse: Course) => {
     try {
       setIsLoading(true);
 
-      if (!user || !isAdminUser(user)) {
+      if (!user || !isAdmin) {
         toast.error('لا تملك الصلاحيات الكافية');
         return;
       }
