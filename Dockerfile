@@ -32,7 +32,13 @@ ENV NODE_ENV=production
 ENV PORT=3000
 ENV NEXT_TELEMETRY_DISABLED=1
 
-RUN apk add --no-cache curl
+# Install dependencies for Mistral 7B
+RUN apk add --no-cache curl python3 python3-pip
+RUN pip3 install --no-cache-dir torch transformers
+
+# Download Mistral 7B quantized model
+RUN mkdir -p /app/models && \
+    curl -L https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.1-GGUF/resolve/main/mistral-7b-instruct-v0.1.Q4_K_M.gguf -o /app/models/mistral-7b-instruct-v0.1.Q4_K_M.gguf
 
 # Create app user
 RUN addgroup -g 1001 -S nodejs && \

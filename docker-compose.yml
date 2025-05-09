@@ -10,15 +10,48 @@ services:
     environment:
       - NODE_ENV=production
       - NEXT_TELEMETRY_DISABLED=1
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
     volumes:
       - .env.production:/app/.env.production:ro
     restart: unless-stopped
     networks:
       - app-network
 
+  mistral:
+    build:
+      context: ./mistral
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8000"
+    deploy:
+      resources:
+        limits:
+          memory: 7G
+          cpus: '1.5'  # Limit CPU usage
+        reservations:
+          memory: 6G
+          cpus: '1.0'  # Reserve 1 CPU
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    environment:
+      - PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:512  # Limit CUDA memory allocation
+      - TRANSFORMERS_CACHE=/app/cache  # Use local cache
+      - CUDA_VISIBLE_DEVICES=0  # Only use one GPU
+    restart: unless-stopped
+    networks:
+      - app-network
+
   cloudflared-gsa:
     image: cloudflare/cloudflared:latest
-    command: ["tunnel", "--origincert", "/cloudflared/cert.pem", "run", "gsa-tunnel"]
+    command: ["tunnel", "--origincert", "/cloudflared/cert.pem", "run", "ghost-studio--academy"]
     environment:
       - TUNNEL_TOKEN=eyJhIjoiNWYyMTA2YmIzMDZjYjZmNDFlMjViNzdjY2MyYTJkYWYiLCJ0IjoiN2YwZmE0YjgtNTc5Ni00NzdhLTkwM2UtM2I0YjExYjg2ZDk1IiwicyI6Ik16aGpNbVF4TTJZdE1qY3lPUzAwTUdSakxUaGlPV010TnpNMk5qa3pNemxtTkdNMCJ9
       - TUNNEL_ORIGIN_CERT=/cloudflared/cert.pem
@@ -32,7 +65,7 @@ services:
 
   cloudflared-n8n:
     image: cloudflare/cloudflared:latest
-    command: ["tunnel", "--origincert", "/cloudflared/cert.pem", "run", "n8n-tunnel"]
+    command: ["tunnel", "--origincert", "/cloudflared/cert.pem", "run", "ghost-studio"]
     environment:
       - TUNNEL_TOKEN=eyJhIjoiNWYyMTA2YmIzMDZjYjZmNDFlMjViNzdjY2MyYTJkYWYiLCJ0IjoiNjYzMjU3MTItODRjYS00OTY5LWIzYTctZGZmYzA5MGZmMWM4IiwicyI6IlkySTBaamt3T0RBdE9HSmtaQzAwWlRGaUxUaGhPVEV0WXpVek5HWmlOall4WWpObCJ9
       - TUNNEL_ORIGIN_CERT=/cloudflared/cert.pem
@@ -51,6 +84,13 @@ services:
     environment:
       - N8N_RUNNERS_ENABLED=true
       - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=true
+      - AI_MODEL_URL=http://mistral:8000
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
     volumes:
       - n8n_data:/home/node/.n8n
     restart: unless-stopped
@@ -60,10 +100,6 @@ services:
 networks:
   app-network:
     driver: bridge
-
-volumes:
-  n8n_data:
-    driver: local
 
 volumes:
   n8n_data:
