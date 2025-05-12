@@ -1,0 +1,85 @@
+import { IExecuteFunctions } from 'n8n-core';
+import {
+    INodeExecutionData,
+    INodeType,
+    INodeTypeDescription,
+} from 'n8n-workflow';
+
+export class Ollama implements INodeType {
+    description: INodeTypeDescription = {
+        displayName: 'Ollama',
+        name: 'ollama',
+        group: ['transform'],
+        version: 1,
+        description: 'Interact with Ollama API',
+        defaults: {
+            name: 'Ollama',
+        },
+        inputs: ['main'],
+        outputs: ['main'],
+        properties: [
+            {
+                displayName: 'Operation',
+                name: 'operation',
+                type: 'options',
+                options: [
+                    {
+                        name: 'Generate',
+                        value: 'generate',
+                        description: 'Generate text using Ollama',
+                    },
+                ],
+                default: 'generate',
+            },
+            {
+                displayName: 'Model',
+                name: 'model',
+                type: 'string',
+                default: 'phi',
+                required: true,
+            },
+            {
+                displayName: 'Prompt',
+                name: 'prompt',
+                type: 'string',
+                default: '',
+                required: true,
+            },
+        ],
+    };
+
+    async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
+        const items = this.getInputData();
+        const returnData: INodeExecutionData[] = [];
+
+        for (let i = 0; i < items.length; i++) {
+            const model = this.getNodeParameter('model', i) as string;
+            const prompt = this.getNodeParameter('prompt', i) as string;
+
+            const response = await this.helpers.request({
+                method: 'POST',
+                url: 'http://ollama:11434/api/generate',
+                body: {
+                    model,
+                    prompt,
+                    stream: false,
+                },
+                json: true,
+            });
+
+            returnData.push({
+                json: response,
+            });
+        }
+
+        return [returnData];
+    }
+}
+
+services:
+  n8n:
+    # ...existing code...
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ./custom-nodes-ollama:/home/node/.n8n/custom
+    # ...existing code...

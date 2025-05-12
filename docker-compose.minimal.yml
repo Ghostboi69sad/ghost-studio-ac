@@ -1,0 +1,105 @@
+services:
+  n8n:
+    image: n8nio/n8n
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_HOST=localhost
+      - N8N_PROTOCOL=http
+      - N8N_PORT=5678
+      - N8N_EDITOR_BASE_URL=http://localhost:5678
+      - N8N_RUNNERS_ENABLED=true
+      - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=true
+      - N8N_CUSTOM_EXTENSIONS=n8n-nodes-base.whatsapp,n8n-nodes-base.telegram,n8n-nodes-base.gmail,n8n-nodes-base.googleSheets,n8n-nodes-ai,n8n-nodes-base.stripe,n8n-nodes-base.aws,n8n-nodes-base.discord,n8n-nodes-base.slack,n8n-nodes-base.hubspot
+    command: >
+      sh -c "npm install n8n-nodes-base.whatsapp n8n-nodes-base.telegram n8n-nodes-base.gmail n8n-nodes-base.googleSheets n8n-nodes-ai n8n-nodes-base.stripe n8n-nodes-base.aws n8n-nodes-base.discord n8n-nodes-base.slack n8n-nodes-base.hubspot &&
+             n8n start"
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ./workspace:/workspace:ro
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  cloudflared-n8n:
+    image: cloudflare/cloudflared:latest
+    command: tunnel run
+    environment:
+      - TUNNEL_TOKEN=${CLOUDFLARE_N8N_TUNNEL_TOKEN}
+    volumes:
+      - ./cloudflared/n8n:/etc/cloudflared:ro
+    restart: unless-stopped
+    networks:
+      - app-network
+    depends_on:
+      - n8n
+
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    deploy:
+      resources:
+        limits:
+          memory: 5G
+          cpus: '2'
+        reservations:
+          memory: 2G
+    environment:
+      - OLLAMA_HOST=0.0.0.0
+      - OLLAMA_MODEL=phi
+      - OLLAMA_GPU_LAYERS=0
+      - OLLAMA_CPU_THREADS=2
+      - OLLAMA_CONTEXT_LENGTH=2048
+      - OLLAMA_BATCH_SIZE=8
+    entrypoint: ["/bin/ollama"]
+    command: ["serve"]
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  ollama-setup:
+    image: curlimages/curl
+    command: >
+      sh -c '
+        echo "Waiting for Ollama..." &&
+        sleep 10 &&
+        while ! curl -s http://ollama:11434/api/tags; do
+          echo "Ollama not ready - waiting..." &&
+          sleep 5
+        done &&
+        echo "Pulling phi model..." &&
+        curl -X POST http://ollama:11434/api/pull -d "{\"name\":\"phi\"}"
+      '
+    networks:
+      - app-network
+    depends_on:
+      - ollama
+
+  code-watcher:
+    image: node:18-alpine
+    volumes:
+      - ./workspace:/workspace
+      - ./scripts:/scripts
+    working_dir: /scripts
+    command: >
+      sh -c "npm install chokidar axios &&
+             node file-watcher.js"
+    environment:
+      - N8N_WEBHOOK_URL=http://n8n:5678/webhook/code-assistant
+    networks:
+      - app-network
+    depends_on:
+      - n8n
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  n8n_data:
+    driver: local
+  ollama_data:
+    driver: local

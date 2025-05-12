@@ -1,144 +1,128 @@
-import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends
+from fastapi.middleware.cors import CORSMiddleware
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
 from pydantic import BaseModel
-from typing import List, Dict
+from typing import Optional
+from ollama_client import OllamaClient
+import torch
+from transformers import AutoTokenizer, AutoModelForCausalLM, PhiConfig, PhiForCausalLM
+from huggingface_hub import snapshot_download
+import logging
 import os
-from contextlib import asynccontextmanager
-from functools import lru_cache
+import gc
 
-app = FastAPI(title="Mistral API", description="API for Mistral 7B Instruct model")
+# Register Phi model architecture before importing AutoConfig
+from transformers.models.auto.configuration_auto import CONFIG_MAPPING
+from transformers.models.auto.modeling_auto import MODEL_MAPPING, AutoConfig
 
-# Model configuration
-@lru_cache()
-def get_model():
-    """Load and cache the model with optimized memory usage."""
-    try:
-        # Set environment variables for memory optimization
-        os.environ['CUDA_VISIBLE_DEVICES'] = '0'  # Use only one GPU
-        os.environ['CUDA_LAUNCH_BLOCKING'] = '1'  # For better memory management
-        os.environ['CUDA_CACHE_MAXSIZE'] = '0'    # Disable CUDA cache
-        
-        # Load tokenizer
-        tokenizer = AutoTokenizer.from_pretrained(
-            "mistralai/Mistral-7B-Instruct-v0.1",
-            model_max_length=2048  # Limit maximum sequence length
-        )
-        
-        # Load model with optimized settings
-        model = AutoModelForCausalLM.from_pretrained(
-            "mistralai/Mistral-7B-Instruct-v0.1",
-            torch_dtype=torch.float16,
-            device_map={
-                '': 0,  # Use GPU
-                'transformer.h.0': 'cpu',  # Offload first layer to CPU
-                'transformer.h.1': 'cpu',  # Offload second layer to CPU
-            },
-            max_memory={
-                0: "7GB",  # Limit GPU memory usage
-                'cpu': '4GB'  # Limit CPU memory usage
-            },
-            load_in_4bit=True,
-            quantization_config={
-                "load_in_4bit": True,
-                "bnb_4bit_compute_dtype": torch.float16,
-                "bnb_4bit_use_double_quant": True,
-                "bnb_4bit_quant_type": "nf4"
-            }
-        )
-        
-        # Add memory monitoring
-        def memory_monitor():
-            import psutil
-            process = psutil.Process()
-            mem_info = process.memory_info()
-            if mem_info.rss / (1024 * 1024 * 1024) > 7:  # 7GB limit
-                raise MemoryError("Memory usage exceeded 7GB limit")
-        
-        # Run memory monitor periodically
-        import threading
-        def monitor_memory():
-            while True:
-                try:
-                    memory_monitor()
-                except MemoryError as e:
-                    raise HTTPException(status_code=503, detail=str(e))
-                threading.sleep(1)
-        
-        threading.Thread(target=monitor_memory, daemon=True).start()
-        
-        return model, tokenizer
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to load model: {str(e)}")
+CONFIG_MAPPING.register("phi", PhiConfig)
+MODEL_MAPPING.register(PhiConfig, PhiForCausalLM)
+
+limiter = Limiter(key_func=get_remote_address)
+app = FastAPI(title="Chat API")
+app.state.limiter = limiter
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Initialize model and tokenizer
+model = None
+tokenizer = None
 
 class ChatRequest(BaseModel):
-    messages: List[Dict[str, str]]  # List of message objects with role and content
-    temperature: float = 0.7
-    max_tokens: int = 2000
-    top_p: float = 0.95
-    top_k: int = 50
+    prompt: str
+    temperature: Optional[float] = 0.7
 
-class ChatResponse(BaseModel):
-    content: str
-    usage: Dict[str, int]
+ollama_client = OllamaClient()
 
-@app.get("/")
-async def root():
-    return {"message": "Mistral API is running"}
+async def download_model(model_id: str, local_dir: str):
+    """Download model from Hugging Face Hub"""
+    logger.info(f"Downloading model {model_id} to {local_dir}")
+    try:
+        os.makedirs(local_dir, exist_ok=True)
+        snapshot_download(
+            repo_id=model_id,
+            local_dir=local_dir,
+            local_dir_use_symlinks=False
+        )
+        logger.info("Model download completed")
+    except Exception as e:
+        logger.error(f"Model download failed: {str(e)}")
+        raise
 
-@app.post("/v1/chat/completions", response_model=ChatResponse)
+@app.on_event("startup")
+async def startup_event():
+    logger.info("Starting up...")
+    try:
+        logger.info("Loading model...")
+        global model, tokenizer
+        
+        model_name = "microsoft/phi-2"
+        model_path = os.getenv("MODEL_PATH", "/app/models/phi-3.8")
+        
+        # Download model if not exists
+        if not os.path.exists(model_path):
+            await download_model(model_name, model_path)
+            
+        logger.info(f"Loading model: {model_name}")
+        
+        config = AutoConfig.from_pretrained(model_path, trust_remote_code=True)
+        
+        tokenizer = AutoTokenizer.from_pretrained(
+            model_path,
+            cache_dir=os.getenv("TRANSFORMERS_CACHE_DIR", "/app/models"),
+            trust_remote_code=True
+        )
+        logger.info("Tokenizer loaded successfully")
+        
+        model = AutoModelForCausalLM.from_pretrained(
+            model_path,
+            config=config,
+            torch_dtype=torch.float16,
+            device_map="auto",
+            max_memory={
+                "cuda": "2GB",
+                "cpu": "2GB"
+            },
+            offload_folder="/app/models/offload",
+            low_cpu_mem_usage=True,
+            load_in_4bit=True,
+            trust_remote_code=True
+        )
+        
+        # Set up memory optimization
+        torch.cuda.empty_cache()
+        gc.collect()
+        
+        logger.info("Model loaded successfully")
+        
+    except Exception as e:
+        logger.error(f"Error during startup: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# Add memory cleanup after each request
+@app.middleware("http")
+async def add_process_time_header(request, call_next):
+    response = await call_next(request)
+    torch.cuda.empty_cache()
+    gc.collect()
+    return response
+
+@app.post("/chat")
+@limiter.limit("60/minute")  # Adjust rate limit as needed
 async def chat(request: ChatRequest):
     try:
-        # Get cached model and tokenizer
-        model, tokenizer = get_model()
-        
-        # Prepare the prompt from messages
-        messages = request.messages
-        prompt = ""
-        for msg in messages:
-            role = msg.get("role", "")
-            content = msg.get("content", "")
-            if role == "user":
-                prompt += f"User: {content}\n"
-            elif role == "assistant":
-                prompt += f"Assistant: {content}\n"
-            else:
-                prompt += f"{content}\n"
-
-        # Tokenize input
-        inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
-        
-        # Generate response
-        with torch.no_grad():
-            outputs = model.generate(
-                **inputs,
-                max_length=request.max_tokens,
-                temperature=request.temperature,
-                top_p=request.top_p,
-                top_k=request.top_k,
-                do_sample=True,
-                pad_token_id=tokenizer.eos_token_id
-            )
-
-        # Decode and format response
-        response = tokenizer.decode(outputs[0], skip_special_tokens=True)
-        
-        # Calculate usage
-        input_tokens = len(inputs["input_ids"][0])
-        output_tokens = len(outputs[0])
-        total_tokens = input_tokens + output_tokens
-        
-        return ChatResponse(
-            content=response,
-            usage={
-                "input_tokens": input_tokens,
-                "output_tokens": output_tokens,
-                "total_tokens": total_tokens
-            }
-        )
-
+        response = await ollama_client.generate(request.prompt)
+        return {"response": response.get("response", ""), "status": "success"}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error generating response: {str(e)}")
+        logger.error(f"Error during chat: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy"}
 
 if __name__ == "__main__":
     import uvicorn
